@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  /* Palette per D016 · honey = feeling, sage = action */
+  --color-cream: #F2E5C9;
+  --color-charcoal: #1F1D1A;
+  --color-honey: #C5A270;
+  --color-sage: #9DAB91;
+  --color-warm: #ECD9B0;
+  --color-surface: #FCF3DA;
+  --color-line: #E0D2B0;
+  --color-muted: #6E5F3E;
+  --color-quiet: #8A7549;
+  --color-sage-tint: #C4D3B8;
+  --color-sage-deep: #3E4D37;
+  --color-honey-tint: #EDD9A6;
+  --color-honey-deep: #5A4624;
+
+  /* Typography per D017 */
+  --font-serif: var(--font-fraunces);
+  --font-sans: var(--font-inter);
+}
+
+@keyframes fresely-fadein {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus mode: when the current page marks itself as focused (e.g. Home's
+   Loading state), hide the primary navigation. Pure presentation signal,
+   controlled per-page via a `data-app-focus="loading"` marker element. */
+body:has([data-app-focus="loading"]) [data-app-nav="primary"] {
+  display: none;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
