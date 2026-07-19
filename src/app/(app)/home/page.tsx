@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
+import { KitchenWisdom } from "@/components/KitchenWisdom";
 import { RecommendationActions } from "@/components/recommendation/RecommendationActions";
 import { RecommendationHeader } from "@/components/recommendation/RecommendationHeader";
 import { RecommendationIngredients } from "@/components/recommendation/RecommendationIngredients";
@@ -88,7 +89,8 @@ export default function HomePage() {
   // --- Ready (no fresh recommendation) ---
   if (!currentRecommendation || !isFresh) {
     return (
-      <main className="flex flex-1 items-center justify-center px-6">
+      <main className="relative flex flex-1 items-center justify-center px-6">
+        <KitchenWisdom />
         <div className="text-center max-w-md">
           {greeting}
           <h1 className="font-serif text-3xl md:text-4xl leading-[1.1] tracking-tight text-charcoal mb-12 text-balance">
@@ -118,7 +120,8 @@ export default function HomePage() {
   // --- Made (post-cook acknowledgment) ---
   if (madeAt) {
     return (
-      <main className="flex-1 px-6 py-12 md:py-16">
+      <main className="relative flex-1 px-6 py-12 md:py-16">
+        <KitchenWisdom />
         <article className="max-w-2xl mx-auto space-y-10">
           {greeting}
           <RecommendationHeader
@@ -146,7 +149,8 @@ export default function HomePage() {
 
   // --- Pick (active recommendation, not yet made) ---
   return (
-    <main className="flex-1 px-6 py-12 md:py-16">
+    <main className="relative flex-1 px-6 py-12 md:py-16">
+      <KitchenWisdom />
       <article className="max-w-2xl mx-auto space-y-10">
         {greeting}
         <RecommendationHeader

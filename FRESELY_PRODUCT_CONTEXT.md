@@ -39,7 +39,19 @@ greeting appears when the name is unavailable — there is no generic fallback.
 
 - Warm cream background, not stark white.
 - Personalized greeting using the user's first name.
-- Kitchen Wisdom emoji/icon beside the notification bell.
+- A small 💡 Kitchen Wisdom control sits top-right on Ready, Made, and the
+  active recommendation (Pick) states — absolutely positioned so it never
+  shifts or resizes the centered or top-aligned content in any of those
+  states. It is hidden during the transient Loading (`isLeaving`) screen.
+  Tapping it toggles a lightweight anchored panel (not a new page, not a
+  large permanent section) showing one static tip. The tip is selected
+  deterministically from the local calendar day (no `Math.random`, no
+  storage) via `getDailyTip` in `src/lib/kitchen-wisdom/tips.ts`, so it stays
+  stable all day and only changes at local midnight. The panel has an
+  explicit close button; Escape also closes it; there is no click-outside
+  dismissal in V1. The notification bell is intentionally not built yet —
+  there is no notification system in the app to back it, and a visible but
+  non-functional bell would be misleading. It remains future work.
 - Calm featured recommendation.
 - "Taste of Home."
 - "Made for Your Roots."
