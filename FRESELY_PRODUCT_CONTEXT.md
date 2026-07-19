@@ -54,6 +54,10 @@ greeting appears when the name is unavailable — there is no generic fallback.
   recommendation with no stored meal context also shows "Tonight." The label
   always reflects what was actually used to generate the current pick and is
   never recalculated from the clock when Home is reopened.
+- The Ready-state CTA (before any recommendation exists) reads "Show me what
+  to make →" — meal-period-neutral wording, since no recommendation or
+  persisted mealContext exists yet at that point. It does not compute or
+  display a temporary time-based label.
 - Snacks must remain accessible.
 - Avoid too many photographs, cards, or carousels.
 - Reduce decision fatigue — this is a design constraint, not just a tagline.

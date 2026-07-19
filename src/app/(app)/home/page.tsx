@@ -97,7 +97,7 @@ export default function HomePage() {
           <Button
             onClick={startGeneration}
           >
-            Find tonight&apos;s dinner &rarr;
+            Show me what to make &rarr;
           </Button>
         </div>
       </main>
