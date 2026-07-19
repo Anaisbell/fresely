@@ -48,6 +48,12 @@ greeting appears when the name is unavailable — there is no generic fallback.
   generation begins: breakfast 05:00–10:59, lunch 11:00–15:59, and dinner
   16:00–04:59. The captured value is persisted with the recommendation rather
   than recomputed when Home reopens.
+- Home displays that persisted meal context as a quiet label on the featured
+  recommendation (both the active pick and the Made state): breakfast shows
+  "Breakfast," lunch shows "Lunch," and dinner shows "Tonight." A legacy
+  recommendation with no stored meal context also shows "Tonight." The label
+  always reflects what was actually used to generate the current pick and is
+  never recalculated from the clock when Home is reopened.
 - Snacks must remain accessible.
 - Avoid too many photographs, cards, or carousels.
 - Reduce decision fatigue — this is a design constraint, not just a tagline.

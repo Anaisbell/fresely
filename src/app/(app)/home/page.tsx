@@ -10,7 +10,14 @@ import { RecommendationMeta } from "@/components/recommendation/RecommendationMe
 import { RecommendationSteps } from "@/components/recommendation/RecommendationSteps";
 import { readGenerationOnboardingAnswers } from "@/lib/app-state/storage";
 import { useHomeRecommendation } from "@/lib/app-state/useHomeRecommendation";
+import type { MealContext } from "@/lib/dinner/types";
 import { writeOnboardingAnswers } from "@/lib/session/dinner-state";
+
+const MEAL_LABELS: Record<MealContext, string> = {
+  breakfast: "Breakfast",
+  lunch: "Lunch",
+  dinner: "Tonight",
+};
 
 export default function HomePage() {
   const router = useRouter();
@@ -18,6 +25,7 @@ export default function HomePage() {
     hydrated,
     firstName,
     currentRecommendation,
+    mealContext,
     madeAt,
     isFresh,
     markMade,
@@ -47,6 +55,10 @@ export default function HomePage() {
       Hi, {trimmedFirstName}.
     </p>
   ) : null;
+
+  // Reflects the meal period actually used to generate the current
+  // recommendation. Never recalculated from the current clock.
+  const mealLabel = mealContext ? MEAL_LABELS[mealContext] : "Tonight";
 
   // --- Loading (transient, presentation-only while navigating away) ---
   if (isLeaving) {
@@ -112,7 +124,7 @@ export default function HomePage() {
           <RecommendationHeader
             title={currentRecommendation.title}
             rationale={currentRecommendation.rationale}
-            eyebrow="Tonight"
+            eyebrow={mealLabel}
           />
           <RecommendationMeta
             timeMinutes={currentRecommendation.timeMinutes}
@@ -140,7 +152,7 @@ export default function HomePage() {
         <RecommendationHeader
           title={currentRecommendation.title}
           rationale={currentRecommendation.rationale}
-          eyebrow="Tonight"
+          eyebrow={mealLabel}
         />
         <RecommendationMeta
           timeMinutes={currentRecommendation.timeMinutes}
