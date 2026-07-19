@@ -14,6 +14,7 @@ export default function HomePage() {
   const router = useRouter();
   const {
     hydrated,
+    firstName,
     currentRecommendation,
     madeAt,
     isFresh,
@@ -25,6 +26,15 @@ export default function HomePage() {
   const [isLeaving, setIsLeaving] = useState(false);
 
   if (!hydrated) return null;
+
+  // Quiet, eyebrow-style greeting reused across every state that isn't the
+  // transient leaving screen. No generic fallback: absent name, no greeting.
+  const trimmedFirstName = firstName.trim();
+  const greeting = trimmedFirstName ? (
+    <p className="text-xs tracking-widest text-quiet mb-4">
+      Hi, {trimmedFirstName}.
+    </p>
+  ) : null;
 
   // --- Loading (transient, presentation-only while navigating away) ---
   if (isLeaving) {
@@ -56,6 +66,7 @@ export default function HomePage() {
     return (
       <main className="flex flex-1 items-center justify-center px-6">
         <div className="text-center max-w-md">
+          {greeting}
           <h1 className="font-serif text-3xl md:text-4xl leading-[1.1] tracking-tight text-charcoal mb-12 text-balance">
             Ready when you are.
           </h1>
@@ -88,6 +99,7 @@ export default function HomePage() {
     return (
       <main className="flex-1 px-6 py-12 md:py-16">
         <article className="max-w-2xl mx-auto space-y-10">
+          {greeting}
           <RecommendationHeader
             title={currentRecommendation.title}
             rationale={currentRecommendation.rationale}
@@ -115,6 +127,7 @@ export default function HomePage() {
   return (
     <main className="flex-1 px-6 py-12 md:py-16">
       <article className="max-w-2xl mx-auto space-y-10">
+        {greeting}
         <RecommendationHeader
           title={currentRecommendation.title}
           rationale={currentRecommendation.rationale}

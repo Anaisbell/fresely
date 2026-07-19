@@ -30,7 +30,9 @@ Flow: **Welcome → Name → Culture → Goal → Details → Loading → Home.*
 
 The Name screen is implemented before Culture and collects a required first
 name. `firstName` persists through onboarding and is stored durably at
-`preferences.firstName`. Home does not display the personalized greeting yet.
+`preferences.firstName`. Home now displays a quiet "Hi, {firstName}." greeting,
+sourced from durable `preferences.firstName` (never from sessionStorage). No
+greeting appears when the name is unavailable — there is no generic fallback.
 `firstName` remains excluded from the `/api/generate` request and Claude prompt.
 
 ## Home screen direction
