@@ -1,5 +1,6 @@
 import type {
   DinnerRecommendation,
+  MealContext,
   OnboardingAnswers,
 } from "@/lib/dinner/types";
 import { migrateLegacyState } from "./migration";
@@ -30,6 +31,7 @@ function setSetupCookie(): void {
 export function completeSetupOnce(
   onboarding: OnboardingAnswers,
   recommendation: DinnerRecommendation,
+  mealContext: MealContext,
   completedAt = new Date(),
 ): CompleteSetupResult {
   const existing = readAppState();
@@ -39,6 +41,7 @@ export function completeSetupOnce(
         onboarding,
         recommendation,
         completedAt,
+        mealContext,
       );
       if (!migration.state) {
         throw new Error("Validated setup data could not be persisted");
@@ -59,9 +62,7 @@ export function completeSetupOnce(
           ? {
               ...existing.latestRecommendation,
               ...migratedRecommendation,
-              madeAt:
-                existing.latestRecommendation?.madeAt ??
-                migratedRecommendation.madeAt,
+              madeAt: null,
             }
           : existing.latestRecommendation,
       };
@@ -78,6 +79,7 @@ export function completeSetupOnce(
     onboarding,
     recommendation,
     completedAt,
+    mealContext,
   );
   if (!migration.state) {
     throw new Error("Validated setup data could not be persisted");
@@ -86,4 +88,37 @@ export function completeSetupOnce(
   writeAppState(migration.state);
   setSetupCookie();
   return { state: migration.state, written: true };
+}
+
+/**
+ * Replaces only the latest recommendation after generation for an already
+ * completed setup. Profile, pantry, and original setup metadata are preserved.
+ */
+export function persistGeneratedRecommendation(
+  onboarding: OnboardingAnswers,
+  recommendation: DinnerRecommendation,
+  mealContext: MealContext,
+  generatedAt = new Date(),
+): FreselyAppState {
+  const existing = readAppState();
+  if (!existing) {
+    throw new Error("Completed setup could not be read");
+  }
+
+  const migration = migrateLegacyState(
+    onboarding,
+    recommendation,
+    generatedAt,
+    mealContext,
+  );
+  if (!migration.state?.latestRecommendation) {
+    throw new Error("Validated recommendation could not be persisted");
+  }
+
+  const state: FreselyAppState = {
+    ...existing,
+    latestRecommendation: migration.state.latestRecommendation,
+  };
+  writeAppState(state);
+  return state;
 }

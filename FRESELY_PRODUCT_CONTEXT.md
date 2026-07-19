@@ -44,6 +44,10 @@ greeting appears when the name is unavailable — there is no generic fallback.
 - "Taste of Home."
 - "Made for Your Roots."
 - Time-aware recommendations: breakfast, lunch, dinner.
+- Primary recommendations use the browser-local meal period captured when
+  generation begins: breakfast 05:00–10:59, lunch 11:00–15:59, and dinner
+  16:00–04:59. The captured value is persisted with the recommendation rather
+  than recomputed when Home reopens.
 - Snacks must remain accessible.
 - Avoid too many photographs, cards, or carousels.
 - Reduce decision fatigue — this is a design constraint, not just a tagline.

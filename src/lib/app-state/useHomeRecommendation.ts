@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { DinnerRecommendation } from "@/lib/dinner/types";
+import type { DinnerRecommendation, MealContext } from "@/lib/dinner/types";
 import { readAppState, updateAppState } from "./storage";
 import type { FreselyAppState } from "./types";
 
@@ -9,6 +9,7 @@ export type HomeRecommendationState = {
   hydrated: boolean;
   firstName: string;
   currentRecommendation: DinnerRecommendation | null;
+  mealContext: MealContext | null;
   savedAt: string | null;
   madeAt: string | null;
   isFresh: boolean;
@@ -68,6 +69,7 @@ export function useHomeRecommendation(): HomeRecommendationState {
     hydrated,
     firstName: state?.preferences.firstName ?? "",
     currentRecommendation: latest?.recommendation ?? null,
+    mealContext: latest?.request.mealContext ?? null,
     savedAt: latest?.generatedAt ?? null,
     madeAt: latest?.madeAt ?? null,
     isFresh: latest ? isSameLocalCalendarDay(latest.generatedAt) : false,

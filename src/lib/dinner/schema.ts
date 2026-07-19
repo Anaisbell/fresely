@@ -38,7 +38,17 @@ export const DinnerRecommendationSchema = z.object({
   caution: z.string().trim().max(500).nullable(),
 });
 
-export const GenerateDinnerRequestSchema = OnboardingAnswersSchema;
+export const MealContextSchema = z.enum(["breakfast", "lunch", "dinner"]);
+
+export const GenerateDinnerRequestSchema = OnboardingAnswersSchema.extend({
+  mealContext: MealContextSchema,
+});
+
+// Durable version 1 records predate meal-period awareness. Missing values are
+// normalized to null without weakening the strict live generation contract.
+export const StoredGenerateDinnerRequestSchema = OnboardingAnswersSchema.extend({
+  mealContext: MealContextSchema.nullable().default(null),
+});
 
 export const GenerateDinnerResponseSchema = z.object({
   recommendation: DinnerRecommendationSchema,

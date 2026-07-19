@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   DinnerRecommendationSchema,
-  GenerateDinnerRequestSchema,
+  StoredGenerateDinnerRequestSchema,
 } from "@/lib/dinner/schema";
 
 export const APP_STATE_VERSION = 1 as const;
@@ -26,7 +26,7 @@ export const LatestRecommendationSchema = z.object({
   recommendation: DinnerRecommendationSchema,
   generatedAt: z.string().datetime(),
   madeAt: z.string().datetime().nullable().default(null),
-  request: GenerateDinnerRequestSchema,
+  request: StoredGenerateDinnerRequestSchema,
 });
 
 export const FreselyAppStateSchema = z.object({

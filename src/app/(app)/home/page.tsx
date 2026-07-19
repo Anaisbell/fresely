@@ -8,7 +8,9 @@ import { RecommendationHeader } from "@/components/recommendation/Recommendation
 import { RecommendationIngredients } from "@/components/recommendation/RecommendationIngredients";
 import { RecommendationMeta } from "@/components/recommendation/RecommendationMeta";
 import { RecommendationSteps } from "@/components/recommendation/RecommendationSteps";
+import { readGenerationOnboardingAnswers } from "@/lib/app-state/storage";
 import { useHomeRecommendation } from "@/lib/app-state/useHomeRecommendation";
+import { writeOnboardingAnswers } from "@/lib/session/dinner-state";
 
 export default function HomePage() {
   const router = useRouter();
@@ -19,11 +21,21 @@ export default function HomePage() {
     madeAt,
     isFresh,
     markMade,
-    clearRecommendation,
   } = useHomeRecommendation();
 
   const [expanded, setExpanded] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+
+  function startGeneration() {
+    const answers = readGenerationOnboardingAnswers();
+    try {
+      writeOnboardingAnswers(answers);
+    } catch {
+      // Loading still reads durable state directly if session storage is unavailable.
+    }
+    setIsLeaving(true);
+    router.push("/onboarding/loading");
+  }
 
   if (!hydrated) return null;
 
@@ -71,10 +83,7 @@ export default function HomePage() {
             Ready when you are.
           </h1>
           <Button
-            onClick={() => {
-              setIsLeaving(true);
-              router.push("/onboarding/loading");
-            }}
+            onClick={startGeneration}
           >
             Find tonight&apos;s dinner &rarr;
           </Button>
@@ -140,11 +149,7 @@ export default function HomePage() {
         />
         <RecommendationActions
           onMadeIt={() => markMade()}
-          onNotTonight={() => {
-            clearRecommendation();
-            setIsLeaving(true);
-            router.push("/onboarding/loading");
-          }}
+          onNotTonight={startGeneration}
           onSeeHow={() => setExpanded((v) => !v)}
           seeHowExpanded={expanded}
         />

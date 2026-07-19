@@ -3,10 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
-import { completeSetupOnce } from "@/lib/app-state/setup";
-import { requestDinnerRecommendation } from "@/lib/dinner/client";
 import {
-  readOnboardingAnswers,
+  completeSetupOnce,
+  persistGeneratedRecommendation,
+} from "@/lib/app-state/setup";
+import { readGenerationOnboardingAnswers } from "@/lib/app-state/storage";
+import { requestDinnerRecommendation } from "@/lib/dinner/client";
+import { getMealContext } from "@/lib/dinner/meal-context";
+import {
   writeRecommendation,
 } from "@/lib/session/dinner-state";
 
@@ -25,7 +29,7 @@ export default function LoadingPage() {
     setStatus("working");
 
     try {
-      const answers = readOnboardingAnswers();
+      const answers = readGenerationOnboardingAnswers();
 
       // If the flow is incomplete, route back to the earliest missing
       // step instead of sending a request the API would reject anyway.
@@ -46,8 +50,15 @@ export default function LoadingPage() {
         return;
       }
 
-      const recommendation = await requestDinnerRecommendation(answers);
-      completeSetupOnce(answers, recommendation);
+      const mealContext = getMealContext();
+      const recommendation = await requestDinnerRecommendation(
+        answers,
+        mealContext,
+      );
+      const setup = completeSetupOnce(answers, recommendation, mealContext);
+      if (!setup.written) {
+        persistGeneratedRecommendation(answers, recommendation, mealContext);
+      }
       writeRecommendation(recommendation);
       router.replace("/home");
     } catch (error) {
@@ -58,6 +69,8 @@ export default function LoadingPage() {
   }, [router]);
 
   useEffect(() => {
+    // Generation is an intentional mount-side effect and is guarded against duplicates.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     generate();
   }, [generate]);
 

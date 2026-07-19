@@ -37,10 +37,11 @@ components.
 
 ## Generation API
 
-`POST /api/generate` accepts only `culture`, `goal`, `kitchen`, and
-`restrictions`. The client constructs this strict request explicitly;
-`firstName` is never sent to the API or included in the Claude prompt. A
-successful response is:
+`POST /api/generate` accepts only `culture`, `goal`, `kitchen`, `restrictions`,
+and the required `mealContext` (`breakfast`, `lunch`, or `dinner`). The browser
+resolves `mealContext` from local time once, at the moment generation begins,
+and the client constructs this strict request explicitly. `firstName` is never
+sent to the API or included in the Claude prompt. A successful response is:
 
 ```ts
 { recommendation: DinnerRecommendation }
@@ -100,7 +101,7 @@ type FreselyAppState = {
   latestRecommendation: {
     recommendation: DinnerRecommendation;
     generatedAt: string;
-    request: GenerateDinnerRequest;
+    request: StoredGenerateDinnerRequest;
   } | null;
 };
 ```
@@ -120,6 +121,11 @@ contract. `completeSetupOnce` then writes the versioned app state and sets the
 `fresely_setup=1` cookie. Repeated calls reuse the existing valid durable state
 instead of overwriting it.
 
+When generation runs after setup is already complete,
+`persistGeneratedRecommendation` replaces only `latestRecommendation` with the
+validated result and the exact `mealContext` sent to the API. Setup metadata,
+preferences, and pantry remain unchanged.
+
 The setup cookie is only a non-sensitive server-routing hint. It contains no
 profile, pantry, request, or recommendation data. Durable state remains in the
 validated local storage record.
@@ -134,6 +140,7 @@ type HomeRecommendationState = {
   hydrated: boolean;
   firstName: string;
   currentRecommendation: DinnerRecommendation | null;
+  mealContext: "breakfast" | "lunch" | "dinner" | null;
   savedAt: string | null;
   madeAt: string | null;
   isFresh: boolean;
@@ -150,6 +157,10 @@ must not compare recommendation dates itself.
 recommendation. `clearRecommendation` removes only the latest recommendation;
 setup, preferences, and pantry remain unchanged. Existing version 1 records
 without `madeAt` remain valid and receive `null` through the schema default.
+Existing version 1 recommendation requests without `mealContext` also remain
+valid and receive `null`. New recommendations persist the exact meal context
+sent to the generation API; stored meal context is never recomputed when Home
+is reopened.
 
 ## Kitchen and You settings
 

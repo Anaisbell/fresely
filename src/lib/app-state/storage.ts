@@ -4,6 +4,7 @@ import type { FreselyAppState } from "./types";
 import {
   ONBOARDING_STORAGE_KEY,
   RECOMMENDATION_STORAGE_KEY,
+  readOnboardingAnswers,
   writeOnboardingAnswers,
 } from "@/lib/session/dinner-state";
 import type { OnboardingAnswers } from "@/lib/dinner/types";
@@ -55,6 +56,37 @@ export function updateAppState(
 export function clearAppState(): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(APP_STATE_STORAGE_KEY);
+}
+
+function applyDefaultServings(goal: string[], servings: number): string[] {
+  if (!goal.length) return goal;
+
+  const withoutServings = goal.filter(
+    (value) => !value.startsWith("Servings: "),
+  );
+  return [...withoutServings, `Servings: ${servings}`].slice(0, 3);
+}
+
+/**
+ * Returns generation answers from validated durable state when setup exists.
+ * Session answers remain the fallback for incomplete first-run onboarding.
+ */
+export function readGenerationOnboardingAnswers(): OnboardingAnswers {
+  const session = readOnboardingAnswers();
+  const existing = readAppState();
+  if (!existing) return session;
+
+  const storedGoal = existing.latestRecommendation?.request.goal ?? session.goal;
+  return {
+    firstName: existing.preferences.firstName,
+    culture: existing.preferences.cultures,
+    goal: applyDefaultServings(
+      storedGoal,
+      existing.preferences.defaultServings,
+    ),
+    kitchen: existing.pantry.ingredients,
+    restrictions: existing.preferences.restrictions,
+  };
 }
 
 function earliestOnboardingRoute(
@@ -129,6 +161,7 @@ export function readOrMigrateAppState(
     onboarding,
     recommendation,
     migratedAt,
+    null,
   );
 
   if (migration.state) {

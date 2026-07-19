@@ -3,16 +3,22 @@ import {
   GenerateDinnerRequestSchema,
   GenerateDinnerResponseSchema,
 } from "./schema";
-import type { DinnerRecommendation, OnboardingAnswers } from "./types";
+import type {
+  DinnerRecommendation,
+  MealContext,
+  OnboardingAnswers,
+} from "./types";
 
 export async function requestDinnerRecommendation(
   answers: OnboardingAnswers,
+  mealContext: MealContext,
 ): Promise<DinnerRecommendation> {
   const request = GenerateDinnerRequestSchema.parse({
     culture: answers.culture,
     goal: answers.goal,
     kitchen: answers.kitchen,
     restrictions: answers.restrictions,
+    mealContext,
   });
   const response = await fetch("/api/generate", {
     method: "POST",

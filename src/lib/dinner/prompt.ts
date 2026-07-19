@@ -1,7 +1,7 @@
 import type { GenerateDinnerRequest } from "./types";
 
-export const DINNER_SYSTEM_PROMPT = `You are Fresely, a practical dinner-planning assistant.
-Create exactly one achievable dinner recommendation for tonight.
+export const DINNER_SYSTEM_PROMPT = `You are Fresely, a practical meal-planning assistant.
+Create exactly one achievable recommendation for the requested meal period.
 
 Safety and quality rules:
 - Respect every stated allergy, dietary restriction, and disliked ingredient.
@@ -18,12 +18,13 @@ export function buildDinnerPrompt(input: GenerateDinnerRequest): string {
     ? input.restrictions.join(", ")
     : "None stated";
 
-  return `Plan tonight's dinner using these preferences:
+  return `Plan a ${input.mealContext} using these preferences:
 
+Meal period: ${input.mealContext}
 Cuisine preferences: ${input.culture.join(", ")}
-Current dinner goal: ${input.goal.join(", ")}
+Current meal goal: ${input.goal.join(", ")}
 Ingredients available: ${input.kitchen.join(", ")}
 Restrictions or dislikes: ${restrictions}
 
-Honor any explicit time and serving directives in the dinner goal. If they are absent, default to 2 servings and infer a realistic preparation time. The rationale should explicitly connect the recommendation to the user's goal, cuisine preferences, and available ingredients.`;
+The actual dish must naturally suit the supplied meal period. Do not take a dinner dish and merely relabel it as breakfast or lunch. Honor any explicit time and serving directives in the meal goal. If they are absent, default to 2 servings and infer a realistic preparation time. The rationale should explicitly connect the recommendation to the user's goal, cuisine preferences, available ingredients, and meal period.`;
 }

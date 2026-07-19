@@ -1,10 +1,12 @@
 import {
   DinnerRecommendationSchema,
-  GenerateDinnerRequestSchema,
+  OnboardingAnswersSchema,
   PartialOnboardingAnswersSchema,
+  StoredGenerateDinnerRequestSchema,
 } from "@/lib/dinner/schema";
 import type {
   DinnerRecommendation,
+  MealContext,
   OnboardingAnswers,
 } from "@/lib/dinner/types";
 import { APP_STATE_VERSION, FreselyAppStateSchema } from "./schema";
@@ -56,9 +58,10 @@ export function migrateLegacyState(
   legacyOnboarding: unknown,
   legacyRecommendation: unknown,
   migratedAt = new Date(),
+  mealContext: MealContext | null = null,
 ): LegacyMigrationResult {
   const onboarding = sanitizeLegacyOnboarding(legacyOnboarding);
-  const request = GenerateDinnerRequestSchema.safeParse({
+  const foodRequest = OnboardingAnswersSchema.safeParse({
     culture: onboarding.culture,
     goal: onboarding.goal,
     kitchen: onboarding.kitchen,
@@ -70,30 +73,34 @@ export function migrateLegacyState(
 
   if (
     !onboarding.firstName.trim() ||
-    !request.success ||
+    !foodRequest.success ||
     !recommendation.success
   ) {
     return { state: null, onboarding };
   }
 
   const timestamp = migratedAt.toISOString();
+  const request = StoredGenerateDinnerRequestSchema.parse({
+    ...foodRequest.data,
+    mealContext,
+  });
   const state = FreselyAppStateSchema.parse({
     version: APP_STATE_VERSION,
     setup: { completedAt: timestamp },
     preferences: {
       firstName: onboarding.firstName,
-      cultures: request.data.culture,
-      restrictions: request.data.restrictions,
-      defaultServings: readServings(request.data.goal),
+      cultures: request.culture,
+      restrictions: request.restrictions,
+      defaultServings: readServings(request.goal),
     },
     pantry: {
-      ingredients: request.data.kitchen,
+      ingredients: request.kitchen,
       updatedAt: timestamp,
     },
     latestRecommendation: {
       recommendation: recommendation.data as DinnerRecommendation,
       generatedAt: timestamp,
-      request: request.data,
+      request,
     },
   });
 
