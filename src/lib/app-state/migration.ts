@@ -16,17 +16,23 @@ export type LegacyMigrationResult = {
 };
 
 function sanitizeLegacyOnboarding(value: unknown): OnboardingAnswers {
+  const defaults = PartialOnboardingAnswersSchema.parse({});
   const input =
     typeof value === "object" && value !== null
       ? (value as Record<string, unknown>)
       : {};
 
-  const field = <K extends keyof OnboardingAnswers>(key: K) => {
+  const field = <K extends keyof OnboardingAnswers>(
+    key: K,
+  ): OnboardingAnswers[K] => {
     const parsed = PartialOnboardingAnswersSchema.shape[key].safeParse(input[key]);
-    return parsed.success ? parsed.data : [];
+    return parsed.success
+      ? (parsed.data as OnboardingAnswers[K])
+      : defaults[key];
   };
 
   return {
+    firstName: field("firstName"),
     culture: field("culture"),
     goal: field("goal"),
     kitchen: field("kitchen"),
@@ -52,12 +58,21 @@ export function migrateLegacyState(
   migratedAt = new Date(),
 ): LegacyMigrationResult {
   const onboarding = sanitizeLegacyOnboarding(legacyOnboarding);
-  const request = GenerateDinnerRequestSchema.safeParse(onboarding);
+  const request = GenerateDinnerRequestSchema.safeParse({
+    culture: onboarding.culture,
+    goal: onboarding.goal,
+    kitchen: onboarding.kitchen,
+    restrictions: onboarding.restrictions,
+  });
   const recommendation = DinnerRecommendationSchema.safeParse(
     legacyRecommendation,
   );
 
-  if (!request.success || !recommendation.success) {
+  if (
+    !onboarding.firstName.trim() ||
+    !request.success ||
+    !recommendation.success
+  ) {
     return { state: null, onboarding };
   }
 
@@ -66,6 +81,7 @@ export function migrateLegacyState(
     version: APP_STATE_VERSION,
     setup: { completedAt: timestamp },
     preferences: {
+      firstName: onboarding.firstName,
       cultures: request.data.culture,
       restrictions: request.data.restrictions,
       defaultServings: readServings(request.data.goal),
@@ -83,4 +99,3 @@ export function migrateLegacyState(
 
   return { state, onboarding };
 }
-

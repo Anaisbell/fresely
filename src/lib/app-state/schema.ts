@@ -11,6 +11,7 @@ export const AppSetupSchema = z.object({
 });
 
 export const AppPreferencesSchema = z.object({
+  firstName: z.string().trim().max(60).default(""),
   cultures: z.array(z.string().trim().min(1).max(80)).min(1).max(12),
   restrictions: z.array(z.string().trim().min(1).max(120)).max(20),
   defaultServings: z.number().int().min(1).max(12),

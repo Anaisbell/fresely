@@ -28,11 +28,10 @@ and confirm before building it.
 
 Flow: **Welcome → Name → Culture → Goal → Details → Loading → Home.**
 
-The Name screen must collect a required first name before Culture. The name
-persists through onboarding and is later used for personalized greetings
-(e.g. on Home). As of the last repo inspection, this Name step has not yet
-been implemented — no `/onboarding/name` route and no `name` field in the
-onboarding schema or durable app-state schema.
+The Name screen is implemented before Culture and collects a required first
+name. `firstName` persists through onboarding and is stored durably at
+`preferences.firstName`. Home does not display the personalized greeting yet.
+`firstName` remains excluded from the `/api/generate` request and Claude prompt.
 
 ## Home screen direction
 

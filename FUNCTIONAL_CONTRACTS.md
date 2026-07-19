@@ -11,8 +11,9 @@ Import `useOnboarding` from `@/lib/useOnboarding`.
 const { answers, setField, clear, hydrated } = useOnboarding();
 ```
 
-`answers` has four string-array fields:
+`answers` contains one session-only identity field and four dinner fields:
 
+- `firstName`: required trimmed first name, up to 60 characters
 - `culture`: one or more cuisine preferences
 - `goal`: the chosen dinner priority followed by optional generation directives
 - `kitchen`: one or more available ingredients
@@ -36,8 +37,10 @@ components.
 
 ## Generation API
 
-`POST /api/generate` accepts the complete onboarding answer object. A successful
-response is:
+`POST /api/generate` accepts only `culture`, `goal`, `kitchen`, and
+`restrictions`. The client constructs this strict request explicitly;
+`firstName` is never sent to the API or included in the Claude prompt. A
+successful response is:
 
 ```ts
 { recommendation: DinnerRecommendation }
@@ -85,6 +88,7 @@ type FreselyAppState = {
   version: 1;
   setup: { completedAt: string };
   preferences: {
+    firstName: string;
     cultures: string[];
     restrictions: string[];
     defaultServings: number;
@@ -128,6 +132,7 @@ Home consumes `useHomeRecommendation` from
 ```ts
 type HomeRecommendationState = {
   hydrated: boolean;
+  firstName: string;
   currentRecommendation: DinnerRecommendation | null;
   savedAt: string | null;
   madeAt: string | null;
@@ -154,6 +159,7 @@ preference edits:
 ```ts
 type AppSettingsState = {
   hydrated: boolean;
+  firstName: string;
   pantryIngredients: string[];
   cultures: string[];
   restrictions: string[];
@@ -180,6 +186,16 @@ The shared app layout is guarded by `AppStateGuard`. Its recovery order is:
    independently and migrate when both form a valid completed setup.
 3. If setup cannot be completed, clear the stale setup cookie and redirect to
    the earliest incomplete onboarding route.
+
+`/onboarding/name` is the earliest onboarding and recovery route. Culture,
+Goal, Details, and Loading all require a non-empty trimmed `firstName` before
+continuing. The Name screen is unnumbered; Culture, Goal, and Details remain
+steps 1–3 of 3.
+
+Existing durable version 1 records without `preferences.firstName` remain
+readable through the empty-string schema default. They are incomplete rather
+than corrupt and resume at `/onboarding/name` while their valid preferences,
+pantry, and session answers are preserved.
 
 Malformed durable storage is removed without clearing beta session keys. A
 valid culture, goal, kitchen, or restrictions field is therefore preserved even

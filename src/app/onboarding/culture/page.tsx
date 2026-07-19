@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tile } from "@/components/Tile";
 import { Button } from "@/components/Button";
@@ -25,9 +25,17 @@ const CUISINES = [
 const NOT_SURE = "Still figuring it out";
 
 export default function CultureOnboarding() {
+  const router = useRouter();
   const { answers, setField, hydrated } = useOnboarding();
 
+  useEffect(() => {
+    if (hydrated && !answers.firstName.trim()) {
+      router.replace("/onboarding/name");
+    }
+  }, [answers.firstName, hydrated, router]);
+
   if (!hydrated) return null;
+  if (!answers.firstName.trim()) return null;
 
   return (
     <CultureForm

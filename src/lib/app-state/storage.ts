@@ -18,7 +18,7 @@ export type AppStateRecoveryResult =
     }
   | {
       status: "resume-onboarding";
-      route: "/onboarding/culture" | "/onboarding/goal" | "/onboarding/details" | "/onboarding/loading";
+      route: "/onboarding/name" | "/onboarding/culture" | "/onboarding/goal" | "/onboarding/details" | "/onboarding/loading";
       onboarding: OnboardingAnswers;
     };
 
@@ -60,6 +60,9 @@ export function clearAppState(): void {
 function earliestOnboardingRoute(
   answers: OnboardingAnswers,
 ): AppStateRecoveryResult & { status: "resume-onboarding" } {
+  if (!answers.firstName.trim()) {
+    return { status: "resume-onboarding", route: "/onboarding/name", onboarding: answers };
+  }
   if (!answers.culture.length) {
     return { status: "resume-onboarding", route: "/onboarding/culture", onboarding: answers };
   }
@@ -86,11 +89,27 @@ export function readOrMigrateAppState(
 ): AppStateRecoveryResult {
   const existing = readAppState();
   if (existing) {
+    if (!existing.preferences.firstName.trim()) {
+      const onboarding: OnboardingAnswers = {
+        firstName: "",
+        culture: existing.preferences.cultures,
+        goal: existing.latestRecommendation?.request.goal ?? [],
+        kitchen: existing.pantry.ingredients,
+        restrictions: existing.preferences.restrictions,
+      };
+      try {
+        writeOnboardingAnswers(onboarding);
+      } catch {
+        // The guard can still redirect safely when session storage is unavailable.
+      }
+      return earliestOnboardingRoute(onboarding);
+    }
     return { status: "ready", state: existing, migrated: false };
   }
 
   if (typeof window === "undefined") {
     return earliestOnboardingRoute({
+      firstName: "",
       culture: [],
       goal: [],
       kitchen: [],

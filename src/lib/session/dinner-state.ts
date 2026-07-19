@@ -11,6 +11,7 @@ export const ONBOARDING_STORAGE_KEY = "fresely:onboarding";
 export const RECOMMENDATION_STORAGE_KEY = "fresely:recommendation";
 
 export const EMPTY_ONBOARDING_ANSWERS: OnboardingAnswers = {
+  firstName: "",
   culture: [],
   goal: [],
   kitchen: [],
@@ -67,4 +68,3 @@ export function clearDinnerSession(): void {
   window.sessionStorage.removeItem(ONBOARDING_STORAGE_KEY);
   window.sessionStorage.removeItem(RECOMMENDATION_STORAGE_KEY);
 }
-

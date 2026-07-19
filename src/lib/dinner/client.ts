@@ -8,7 +8,12 @@ import type { DinnerRecommendation, OnboardingAnswers } from "./types";
 export async function requestDinnerRecommendation(
   answers: OnboardingAnswers,
 ): Promise<DinnerRecommendation> {
-  const request = GenerateDinnerRequestSchema.parse(answers);
+  const request = GenerateDinnerRequestSchema.parse({
+    culture: answers.culture,
+    goal: answers.goal,
+    kitchen: answers.kitchen,
+    restrictions: answers.restrictions,
+  });
   const response = await fetch("/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -27,4 +32,3 @@ export async function requestDinnerRecommendation(
 
   return GenerateDinnerResponseSchema.parse(body).recommendation;
 }
-

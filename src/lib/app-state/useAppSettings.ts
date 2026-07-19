@@ -10,6 +10,7 @@ import type { FreselyAppState } from "./types";
 
 export type AppSettingsState = {
   hydrated: boolean;
+  firstName: string;
   pantryIngredients: string[];
   cultures: string[];
   restrictions: string[];
@@ -112,6 +113,7 @@ export function useAppSettings(): AppSettingsState {
 
   return {
     hydrated,
+    firstName: state?.preferences.firstName ?? "",
     pantryIngredients: state?.pantry.ingredients ?? [],
     cultures: state?.preferences.cultures ?? [],
     restrictions: state?.preferences.restrictions ?? [],
@@ -122,4 +124,3 @@ export function useAppSettings(): AppSettingsState {
     setDefaultServings,
   };
 }
-

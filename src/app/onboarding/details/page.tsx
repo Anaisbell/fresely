@@ -42,6 +42,10 @@ export default function DetailsOnboarding() {
   // them fill this form and fail at generation.
   useEffect(() => {
     if (!hydrated) return;
+    if (!answers.firstName.trim()) {
+      router.replace("/onboarding/name");
+      return;
+    }
     if (!answers.culture.length) {
       router.replace("/onboarding/culture");
       return;
@@ -49,10 +53,16 @@ export default function DetailsOnboarding() {
     if (!answers.goal.length) {
       router.replace("/onboarding/goal");
     }
-  }, [hydrated, answers.culture.length, answers.goal.length, router]);
+  }, [hydrated, answers.firstName, answers.culture.length, answers.goal.length, router]);
 
   if (!hydrated) return null;
-  if (!answers.culture.length || !answers.goal.length) return null;
+  if (
+    !answers.firstName.trim() ||
+    !answers.culture.length ||
+    !answers.goal.length
+  ) {
+    return null;
+  }
 
   return <DetailsForm answers={answers} />;
 }

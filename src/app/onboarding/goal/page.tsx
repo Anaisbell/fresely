@@ -23,13 +23,17 @@ export default function GoalOnboarding() {
   // (bookmarked link, cleared storage, etc.), send them back to Q1.
   useEffect(() => {
     if (!hydrated) return;
+    if (!answers.firstName.trim()) {
+      router.replace("/onboarding/name");
+      return;
+    }
     if (!answers.culture.length) {
       router.replace("/onboarding/culture");
     }
-  }, [hydrated, answers.culture.length, router]);
+  }, [hydrated, answers.firstName, answers.culture.length, router]);
 
   if (!hydrated) return null;
-  if (!answers.culture.length) return null;
+  if (!answers.firstName.trim() || !answers.culture.length) return null;
 
   const selected = answers.goal[0];
 

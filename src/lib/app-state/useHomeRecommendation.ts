@@ -7,6 +7,7 @@ import type { FreselyAppState } from "./types";
 
 export type HomeRecommendationState = {
   hydrated: boolean;
+  firstName: string;
   currentRecommendation: DinnerRecommendation | null;
   savedAt: string | null;
   madeAt: string | null;
@@ -65,6 +66,7 @@ export function useHomeRecommendation(): HomeRecommendationState {
 
   return {
     hydrated,
+    firstName: state?.preferences.firstName ?? "",
     currentRecommendation: latest?.recommendation ?? null,
     savedAt: latest?.generatedAt ?? null,
     madeAt: latest?.madeAt ?? null,
@@ -73,4 +75,3 @@ export function useHomeRecommendation(): HomeRecommendationState {
     clearRecommendation,
   };
 }
-

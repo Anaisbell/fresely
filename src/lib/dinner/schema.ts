@@ -8,6 +8,7 @@ export const OnboardingAnswersSchema = z.object({
 });
 
 export const PartialOnboardingAnswersSchema = z.object({
+  firstName: z.string().trim().max(60).default(""),
   // Session state is written after every onboarding step, so required fields
   // must accept an empty array until the user reaches generation. Element and
   // maximum-size validation remain identical to the final request contract.

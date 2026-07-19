@@ -29,6 +29,10 @@ export default function LoadingPage() {
 
       // If the flow is incomplete, route back to the earliest missing
       // step instead of sending a request the API would reject anyway.
+      if (!answers.firstName.trim()) {
+        router.replace("/onboarding/name");
+        return;
+      }
       if (!answers.culture.length) {
         router.replace("/onboarding/culture");
         return;

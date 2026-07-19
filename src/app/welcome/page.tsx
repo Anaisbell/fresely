@@ -17,7 +17,7 @@ export default function WelcomePage() {
             One pick, thoughtfully chosen for tonight.
           </p>
           <Link
-            href="/onboarding/culture"
+            href="/onboarding/name"
             className="inline-block text-sm tracking-wide text-quiet hover:text-charcoal transition-colors"
           >
             Begin &rarr;
@@ -27,4 +27,3 @@ export default function WelcomePage() {
     </main>
   );
 }
-
