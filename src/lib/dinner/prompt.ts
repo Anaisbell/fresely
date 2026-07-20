@@ -18,6 +18,12 @@ export function buildDinnerPrompt(input: GenerateDinnerRequest): string {
     ? input.restrictions.join(", ")
     : "None stated";
 
+  // Only present during in-place regeneration (e.g. "Not today"). Absent for
+  // the original recommendation, since there's nothing yet to differ from.
+  const diversityNote = input.previousRecommendationTitle
+    ? `\n\nThe user already saw and decided not to make "${input.previousRecommendationTitle}" for this meal period. Recommend a genuinely different meal rather than a variation of the previous one. Avoid changing only a garnish, seasoning, or small ingredient. Prefer a different overall meal concept, cooking style, or primary ingredient while still respecting the user's pantry, preferences, goals, and meal period.`
+    : "";
+
   return `Plan a ${input.mealContext} using these preferences:
 
 Meal period: ${input.mealContext}
@@ -26,5 +32,5 @@ Current meal goal: ${input.goal.join(", ")}
 Ingredients available: ${input.kitchen.join(", ")}
 Restrictions or dislikes: ${restrictions}
 
-The actual dish must naturally suit the supplied meal period. Do not take a dinner dish and merely relabel it as breakfast or lunch. Honor any explicit time and serving directives in the meal goal. If they are absent, default to 2 servings and infer a realistic preparation time. The rationale should explicitly connect the recommendation to the user's goal, cuisine preferences, available ingredients, and meal period.`;
+The actual dish must naturally suit the supplied meal period. Do not take a dinner dish and merely relabel it as breakfast or lunch. Honor any explicit time and serving directives in the meal goal. If they are absent, default to 2 servings and infer a realistic preparation time. The rationale should explicitly connect the recommendation to the user's goal, cuisine preferences, available ingredients, and meal period.${diversityNote}`;
 }

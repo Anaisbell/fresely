@@ -52,7 +52,46 @@ greeting appears when the name is unavailable — there is no generic fallback.
   dismissal in V1. The notification bell is intentionally not built yet —
   there is no notification system in the app to back it, and a visible but
   non-functional bell would be misleading. It remains future work.
-- Calm featured recommendation.
+- The featured recommendation renders as a single premium card
+  (`FeaturedRecommendationCard`, Home-only, reused across the Made and Pick
+  states): a reserved image area (a warm gradient placeholder — no image
+  field exists in the recommendation data yet, and none is invented here;
+  the container is sized and rounded so a real image can drop in later
+  without a layout change), the persisted meal label, the recipe title
+  (max two lines, gracefully truncated), inline metadata
+  ("⏱ {time} min • 🍽 Serves {servings}"), a single primary "Cook Now →"
+  button, and the secondary actions underneath. "Cook Now →" triggers the
+  same expand/collapse behavior the old "See how" link used to trigger —
+  it is not a new action. The long recommendation rationale and the
+  allergy/caution note no longer render on Home; neither field is removed
+  from data, generation, or storage. On Made, the secondary row has no
+  actions (unchanged from before); on Pick, it is "Made it" and
+  "Not tonight" only — "See how" no longer appears as a separate control
+  since Cook Now replaced it. `RecommendationHeader` and `RecommendationMeta`
+  are unchanged and still used by the legacy `/tonight` route; Home simply
+  no longer calls them.
+- Below the greeting, Home shows a static supporting line, "Let's make
+  today delicious." — not yet derived from mealContext. It appears only
+  alongside the greeting (same no-generic-fallback condition).
+- Tapping "Not tonight" on the active recommendation opens a bottom sheet
+  ("What wasn't quite right?") with six reason options (too heavy, too
+  expensive, missing ingredients, too much effort, not in the mood, just
+  something different) and a Continue button. The selected reason is V1
+  only — never sent to the API, never persisted. Continue closes the sheet
+  and regenerates in place on Home (no navigation, no loading screen): the
+  current card slides away and the new one slides into the exact same
+  position via a reusable `HeroTransition` component. Reuses the existing
+  generation and persistence path exactly (see `FUNCTIONAL_CONTRACTS.md`);
+  only the call site changed. `BottomSheet` is a generic, reusable
+  component, not specific to this one interaction.
+- That regeneration also sends one extra, ephemeral piece of context:
+  `previousRecommendationTitle`, the recommendation just replaced. The
+  prompt uses it to ask for a genuinely different meal — a different overall
+  concept, cooking style, or primary ingredient — rather than a minor
+  variation (e.g. the same dish with a different vegetable). This value is
+  never persisted and never reused beyond that one request. The specific
+  reason selected in the sheet is still not sent to the API — this is
+  intentionally scoped to recommendation diversity only.
 - "Taste of Home."
 - "Made for Your Roots."
 - Time-aware recommendations: breakfast, lunch, dinner.

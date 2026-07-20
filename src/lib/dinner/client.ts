@@ -12,6 +12,7 @@ import type {
 export async function requestDinnerRecommendation(
   answers: OnboardingAnswers,
   mealContext: MealContext,
+  previousRecommendationTitle?: string,
 ): Promise<DinnerRecommendation> {
   const request = GenerateDinnerRequestSchema.parse({
     culture: answers.culture,
@@ -19,6 +20,7 @@ export async function requestDinnerRecommendation(
     kitchen: answers.kitchen,
     restrictions: answers.restrictions,
     mealContext,
+    previousRecommendationTitle,
   });
   const response = await fetch("/api/generate", {
     method: "POST",

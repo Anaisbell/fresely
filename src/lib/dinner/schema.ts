@@ -40,8 +40,12 @@ export const DinnerRecommendationSchema = z.object({
 
 export const MealContextSchema = z.enum(["breakfast", "lunch", "dinner"]);
 
+// Ephemeral, per-call diversity hint for in-place regeneration (e.g. "Not
+// today"). Not part of StoredGenerateDinnerRequestSchema below — it must
+// never be persisted, only ever reflect whatever was on screen a moment ago.
 export const GenerateDinnerRequestSchema = OnboardingAnswersSchema.extend({
   mealContext: MealContextSchema,
+  previousRecommendationTitle: z.string().trim().min(1).max(120).optional(),
 });
 
 // Durable version 1 records predate meal-period awareness. Missing values are

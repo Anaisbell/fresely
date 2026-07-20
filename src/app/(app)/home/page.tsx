@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { KitchenWisdom } from "@/components/KitchenWisdom";
-import { RecommendationActions } from "@/components/recommendation/RecommendationActions";
-import { RecommendationHeader } from "@/components/recommendation/RecommendationHeader";
+import { FeaturedRecommendationCard } from "@/components/recommendation/FeaturedRecommendationCard";
+import { HeroTransition } from "@/components/recommendation/HeroTransition";
+import { NotTodaySheet } from "@/components/recommendation/NotTodaySheet";
 import { RecommendationIngredients } from "@/components/recommendation/RecommendationIngredients";
-import { RecommendationMeta } from "@/components/recommendation/RecommendationMeta";
 import { RecommendationSteps } from "@/components/recommendation/RecommendationSteps";
+import { persistGeneratedRecommendation } from "@/lib/app-state/setup";
 import { readGenerationOnboardingAnswers } from "@/lib/app-state/storage";
 import { useHomeRecommendation } from "@/lib/app-state/useHomeRecommendation";
+import { requestDinnerRecommendation } from "@/lib/dinner/client";
+import { getMealContext } from "@/lib/dinner/meal-context";
 import type { MealContext } from "@/lib/dinner/types";
 import { writeOnboardingAnswers } from "@/lib/session/dinner-state";
 
@@ -27,13 +30,17 @@ export default function HomePage() {
     firstName,
     currentRecommendation,
     mealContext,
+    savedAt,
     madeAt,
     isFresh,
     markMade,
+    syncState,
   } = useHomeRecommendation();
 
   const [expanded, setExpanded] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [notTodayOpen, setNotTodayOpen] = useState(false);
+  const regeneratingRef = useRef(false);
 
   function startGeneration() {
     const answers = readGenerationOnboardingAnswers();
@@ -46,6 +53,51 @@ export default function HomePage() {
     router.push("/onboarding/loading");
   }
 
+  // "Not today" regenerates in place on Home instead of navigating to
+  // /onboarding/loading: no route change, no loading screen. Reuses the
+  // same requestDinnerRecommendation + persistGeneratedRecommendation path
+  // the loading screen already uses — nothing about generation itself
+  // changes, only where it's called from. HeroTransition (keyed on
+  // savedAt) picks up the resulting state change and animates the swap.
+  async function regenerateForNotToday() {
+    if (regeneratingRef.current) {
+      return;
+    }
+    regeneratingRef.current = true;
+
+    try {
+      const answers = readGenerationOnboardingAnswers();
+      const nextMealContext = getMealContext();
+      // Captured before regeneration replaces it — this is what the model
+      // should avoid repeating. Ephemeral: never persisted, only ever sent
+      // for this one request.
+      const previousRecommendationTitle = currentRecommendation?.title;
+      const recommendation = await requestDinnerRecommendation(
+        answers,
+        nextMealContext,
+        previousRecommendationTitle,
+      );
+      const nextState = persistGeneratedRecommendation(
+        answers,
+        recommendation,
+        nextMealContext,
+      );
+      syncState(nextState);
+      setExpanded(false);
+    } catch (error) {
+      // No loading/error screen for this path by design — the current pick
+      // simply stays put if regeneration fails.
+      console.error("Not today regeneration failed", error);
+    } finally {
+      regeneratingRef.current = false;
+    }
+  }
+
+  function handleNotTodayContinue() {
+    setNotTodayOpen(false);
+    void regenerateForNotToday();
+  }
+
   if (!hydrated) return null;
 
   // Quiet, eyebrow-style greeting reused across every state that isn't the
@@ -55,6 +107,12 @@ export default function HomePage() {
     <p className="text-xs tracking-widest text-quiet mb-4">
       Hi, {trimmedFirstName}.
     </p>
+  ) : null;
+
+  // Static for now — not derived from mealContext. Only shown alongside the
+  // greeting, matching its no-generic-fallback behavior.
+  const supportingLine = trimmedFirstName ? (
+    <p className="text-sm text-muted mb-10">Let&apos;s make today delicious.</p>
   ) : null;
 
   // Reflects the meal period actually used to generate the current
@@ -93,7 +151,8 @@ export default function HomePage() {
         <KitchenWisdom />
         <div className="text-center max-w-md">
           {greeting}
-          <h1 className="font-serif text-3xl md:text-4xl leading-[1.1] tracking-tight text-charcoal mb-12 text-balance">
+          {supportingLine}
+          <h1 className="font-serif text-3xl md:text-4xl leading-[1.1] tracking-tight text-charcoal mb-8 text-balance">
             Ready when you are.
           </h1>
           <Button
@@ -124,23 +183,20 @@ export default function HomePage() {
         <KitchenWisdom />
         <article className="max-w-2xl mx-auto space-y-10">
           {greeting}
-          <RecommendationHeader
-            title={currentRecommendation.title}
-            rationale={currentRecommendation.rationale}
-            eyebrow={mealLabel}
-          />
-          <RecommendationMeta
-            timeMinutes={currentRecommendation.timeMinutes}
-            servings={currentRecommendation.servings}
-            caution={currentRecommendation.caution}
-          />
+          {supportingLine}
+          <HeroTransition transitionKey={savedAt ?? "initial"}>
+            <FeaturedRecommendationCard
+              title={currentRecommendation.title}
+              mealLabel={mealLabel}
+              timeMinutes={currentRecommendation.timeMinutes}
+              servings={currentRecommendation.servings}
+              cookNowExpanded={expanded}
+              onCookNow={() => setExpanded((v) => !v)}
+            />
+          </HeroTransition>
           <p className="font-serif italic text-base text-muted">
             Enjoy tonight.
           </p>
-          <RecommendationActions
-            onSeeHow={() => setExpanded((v) => !v)}
-            seeHowExpanded={expanded}
-          />
           {detailsBlock}
         </article>
       </main>
@@ -153,24 +209,26 @@ export default function HomePage() {
       <KitchenWisdom />
       <article className="max-w-2xl mx-auto space-y-10">
         {greeting}
-        <RecommendationHeader
-          title={currentRecommendation.title}
-          rationale={currentRecommendation.rationale}
-          eyebrow={mealLabel}
-        />
-        <RecommendationMeta
-          timeMinutes={currentRecommendation.timeMinutes}
-          servings={currentRecommendation.servings}
-          caution={currentRecommendation.caution}
-        />
-        <RecommendationActions
-          onMadeIt={() => markMade()}
-          onNotTonight={startGeneration}
-          onSeeHow={() => setExpanded((v) => !v)}
-          seeHowExpanded={expanded}
-        />
+        {supportingLine}
+        <HeroTransition transitionKey={savedAt ?? "initial"}>
+          <FeaturedRecommendationCard
+            title={currentRecommendation.title}
+            mealLabel={mealLabel}
+            timeMinutes={currentRecommendation.timeMinutes}
+            servings={currentRecommendation.servings}
+            cookNowExpanded={expanded}
+            onCookNow={() => setExpanded((v) => !v)}
+            onMadeIt={() => markMade()}
+            onNotTonight={() => setNotTodayOpen(true)}
+          />
+        </HeroTransition>
         {detailsBlock}
       </article>
+      <NotTodaySheet
+        open={notTodayOpen}
+        onClose={() => setNotTodayOpen(false)}
+        onContinue={handleNotTodayContinue}
+      />
     </main>
   );
 }

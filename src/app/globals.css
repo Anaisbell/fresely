@@ -32,6 +32,15 @@
   }
 }
 
+@keyframes fresely-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 /* Focus mode: when the current page marks itself as focused (e.g. Home's
    Loading state), hide the primary navigation. Pure presentation signal,
    controlled per-page via a `data-app-focus="loading"` marker element. */
