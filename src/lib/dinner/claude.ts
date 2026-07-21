@@ -1,9 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { DinnerRecommendationSchema } from "./schema";
+import { DinnerRecommendationContentSchema, DinnerRecommendationSchema } from "./schema";
 import { buildDinnerPrompt, DINNER_SYSTEM_PROMPT } from "./prompt";
 import type { DinnerRecommendation, GenerateDinnerRequest } from "./types";
 
+// AI-generated path for "Made for Your Roots". This only runs when no
+// curated anchor recipe matched the request (see anchor-recipes/select.ts
+// and generate.ts, which decide that before this function is ever called).
 export async function generateDinnerRecommendation(
   input: GenerateDinnerRequest,
 ): Promise<DinnerRecommendation> {
@@ -21,7 +24,9 @@ export async function generateDinnerRecommendation(
     system: DINNER_SYSTEM_PROMPT,
     messages: [{ role: "user", content: buildDinnerPrompt(input) }],
     output_config: {
-      format: zodOutputFormat(DinnerRecommendationSchema),
+      // The model only ever produces recipe content, never `source` — the
+      // app decides that, not Claude.
+      format: zodOutputFormat(DinnerRecommendationContentSchema),
     },
   });
 
@@ -29,5 +34,8 @@ export async function generateDinnerRecommendation(
     throw new Error("Claude returned no structured recommendation");
   }
 
-  return DinnerRecommendationSchema.parse(message.parsed_output);
+  return DinnerRecommendationSchema.parse({
+    ...message.parsed_output,
+    source: "ai",
+  });
 }

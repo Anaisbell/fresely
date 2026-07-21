@@ -61,6 +61,42 @@ sent to the API — only the previous title is. A successful response is:
 { recommendation: DinnerRecommendation }
 ```
 
+### "Made for Your Roots" hybrid sourcing
+
+`DinnerRecommendation` carries a `source: "anchor" | "ai"` field, defaulted
+to `"ai"` at the schema level so every recommendation persisted before this
+field existed (all of them) remains valid without a migration step.
+
+`getDinnerRecommendation` in `src/lib/dinner/generate.ts` is the single entry
+point the API route calls, and is the only thing that changed on the request
+path. It tries `selectAnchorRecipe` (curated, `src/lib/dinner/anchor-recipes/`)
+first; if a match is found, it's mapped directly to a `DinnerRecommendation`
+with `source: "anchor"` and returned with no Claude call at all. Otherwise it
+falls through to the existing `generateDinnerRecommendation` (`claude.ts`)
+exactly as before, which now sets `source: "ai"` after generation. Claude's
+structured-output schema never includes `source` — the model only ever
+produces recipe content (`DinnerRecommendationContentSchema`); the app
+decides the source, not the model.
+
+Anchor selection priority, matching product's decision: safety/restriction
+conflicts always exclude a match; pantry incompatibility (a core ingredient
+missing from `kitchen`) always excludes a match; meal context is part of the
+base match (culture + `mealContext` must both match); a stated
+`Time available` directive that the recipe can't meet excludes a match.
+Stated goals (e.g. weight loss, protein) never exclude a match — they're
+reserved for ranking between multiple survivors, not yet implemented since
+the library currently has at most one candidate per culture + meal context.
+
+The base culture + `mealContext` match is served by a `Map` built once at
+module load from `ANCHOR_RECIPES` (keyed by normalized `"culture:mealContext"`),
+not a per-request scan of the full library — this is what keeps selection
+cheap as the library grows into the hundreds or thousands. Curated recipes
+live under `src/lib/dinner/anchor-recipes/data/`, one file per culture (e.g.
+`data/dominican.ts`), aggregated and validated against `AnchorRecipeSchema`
+in `data/index.ts`. Adding a cultural classic means appending an entry to
+its culture's file, or adding a new culture file and registering it in
+`data/index.ts` — no other file changes as the library grows.
+
 Failures use:
 
 ```ts

@@ -1,4 +1,4 @@
-import { generateDinnerRecommendation } from "@/lib/dinner/claude";
+import { getDinnerRecommendation } from "@/lib/dinner/generate";
 import { GenerateDinnerRequestSchema } from "@/lib/dinner/schema";
 
 export const runtime = "nodejs";
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const recommendation = await generateDinnerRecommendation(parsed.data);
+    const recommendation = await getDinnerRecommendation(parsed.data);
     return Response.json({ recommendation });
   } catch (error) {
     console.error("Dinner generation failed", error);

@@ -27,7 +27,11 @@ export const PartialOnboardingAnswersSchema = z.object({
     .default([]),
 });
 
-export const DinnerRecommendationSchema = z.object({
+// The fields the model itself is responsible for producing. Kept separate
+// from DinnerRecommendationSchema below so `source` (which the app decides,
+// never the model) is never part of the structured-output contract sent to
+// Claude — see zodOutputFormat usage in claude.ts.
+export const DinnerRecommendationContentSchema = z.object({
   title: z.string().trim().min(1).max(120),
   rationale: z.string().trim().min(1).max(500),
   timeMinutes: z.number().int().min(5).max(180),
@@ -36,6 +40,15 @@ export const DinnerRecommendationSchema = z.object({
   additionalIngredients: z.array(z.string().trim().min(1).max(120)).max(30),
   steps: z.array(z.string().trim().min(1).max(600)).min(2).max(12),
   caution: z.string().trim().max(500).nullable(),
+});
+
+// "Made for Your Roots" hybrid sourcing: `source` records whether a
+// recommendation came from a curated anchor recipe or was AI-generated.
+// Defaulted to "ai" so every recommendation persisted before this field
+// existed (all of them, since anchors didn't exist yet) remains valid
+// without a migration step — see FUNCTIONAL_CONTRACTS.md.
+export const DinnerRecommendationSchema = DinnerRecommendationContentSchema.extend({
+  source: z.enum(["anchor", "ai"]).default("ai"),
 });
 
 export const MealContextSchema = z.enum(["breakfast", "lunch", "dinner"]);

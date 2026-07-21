@@ -93,7 +93,19 @@ greeting appears when the name is unavailable — there is no generic fallback.
   reason selected in the sheet is still not sent to the API — this is
   intentionally scoped to recommendation diversity only.
 - "Taste of Home."
-- "Made for Your Roots."
+- "Made for Your Roots" is a hybrid recipe architecture, not a pure-AI
+  feature. Curated "anchor" recipes — manually reviewed cultural classics —
+  take priority whenever one is safe (no restriction conflict) and practical
+  (the user's pantry covers its defining ingredients, and it fits their
+  stated meal context and time). AI generation is the fallback and
+  personalization layer: it runs whenever no curated recipe clears those
+  bars, not merely because AI could optimize the pick further. This milestone
+  ships the architecture and one illustrative curated recipe, not a full
+  library — curators add classics incrementally, one file per culture under
+  `src/lib/dinner/anchor-recipes/data/`; nothing else in the system changes
+  as the library grows. Every recommendation now carries a `source: "anchor"
+  | "ai"` field; no Home UI treatment for it exists yet (see
+  `FUNCTIONAL_CONTRACTS.md`).
 - Time-aware recommendations: breakfast, lunch, dinner.
 - Primary recommendations use the browser-local meal period captured when
   generation begins: breakfast 05:00–10:59, lunch 11:00–15:59, and dinner
