@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const DESTINATIONS = [
   { href: "/home", label: "Home" },
   { href: "/kitchen", label: "Kitchen" },
-  { href: "/you", label: "You" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export function AppNavigation() {

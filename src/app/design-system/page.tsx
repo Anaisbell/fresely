@@ -1,7 +1,15 @@
+"use client";
+
+import { useState } from "react";
 import { Button } from "@/components/Button";
 import { Tile } from "@/components/Tile";
 import { Card } from "@/components/Card";
 import { Pill } from "@/components/Pill";
+import { PantryIngredients } from "@/components/kitchen/PantryIngredients";
+import { CultureTilePicker } from "@/components/CultureTilePicker";
+import { FirstNameField } from "@/components/settings/FirstNameField";
+import { RestrictionChips } from "@/components/settings/RestrictionChips";
+import { ServingsStepper } from "@/components/settings/ServingsStepper";
 
 export default function DesignSystemPage() {
   return (
@@ -55,6 +63,14 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
+      <Section title="Pantry ingredients (Kitchen V1 — WIP)">
+        <PantryIngredientsPreview />
+      </Section>
+
+      <Section title="Settings profile layout (Settings V1 — WIP)">
+        <SettingsPreview />
+      </Section>
+
       <Section title="Card (hero preview)">
         <Card>
           <div className="h-40 bg-honey" />
@@ -72,6 +88,110 @@ export default function DesignSystemPage() {
         </Card>
       </Section>
     </main>
+  );
+}
+
+/**
+ * Local-state stub for reviewing PantryIngredients' visuals and interaction
+ * in isolation, before it's wired to real durable storage in Kitchen
+ * (Step 2). Not the real Kitchen page — just a bench to check this against.
+ */
+function PantryIngredientsPreview() {
+  const [ingredients, setIngredients] = useState([
+    "chicken thighs",
+    "rice",
+    "onions",
+    "garlic",
+    "spinach",
+  ]);
+
+  return (
+    <PantryIngredients
+      ingredients={ingredients}
+      onAdd={(ingredient) => setIngredients((prev) => [...prev, ingredient])}
+      onRemove={(ingredient) =>
+        setIngredients((prev) => prev.filter((item) => item !== ingredient))
+      }
+    />
+  );
+}
+
+/**
+ * Local-state stub for reviewing the new Settings V1 fields composed into
+ * their intended two-section "profile" layout, before any of it is wired
+ * to real durable storage or the real /you (soon /settings) page. Section
+ * headings use the same text-2xl serif treatment as this page's own
+ * Section wrapper; field labels reuse onboarding Details' established
+ * "font-serif italic text-lg" style, so the hierarchy (section > field >
+ * control) is legible without leaning on borders, cards, or boxes — meant
+ * to read as a profile's grouped information, not a stacked admin form.
+ */
+function SettingsPreview() {
+  const [firstName, setFirstName] = useState("Anna");
+  const [cultures, setCultures] = useState<string[]>([
+    "Dominican",
+    "Soul Food",
+  ]);
+  const [restrictions, setRestrictions] = useState<string[]>(["peanuts"]);
+  const [servings, setServings] = useState(2);
+
+  return (
+    <div className="max-w-lg space-y-12">
+      <div className="space-y-8">
+        <h3 className="font-serif text-2xl text-charcoal">About You</h3>
+
+        <div>
+          <label
+            htmlFor="preview-first-name"
+            className="block font-serif italic text-lg text-charcoal mb-3"
+          >
+            First name
+          </label>
+          <FirstNameField
+            id="preview-first-name"
+            value={firstName}
+            onCommit={setFirstName}
+          />
+        </div>
+
+        <div>
+          <div className="font-serif italic text-lg text-charcoal mb-3">
+            Cuisine preferences
+          </div>
+          <CultureTilePicker selected={cultures} onChange={setCultures} compact />
+        </div>
+      </div>
+
+      <div className="space-y-8">
+        <h3 className="font-serif text-2xl text-charcoal">
+          Food Preferences
+        </h3>
+
+        <div>
+          <div className="font-serif italic text-lg text-charcoal mb-3">
+            Dietary restrictions
+          </div>
+          <RestrictionChips
+            restrictions={restrictions}
+            onAdd={(restriction) =>
+              setRestrictions((prev) => [...prev, restriction])
+            }
+            onRemove={(restriction) =>
+              setRestrictions((prev) =>
+                prev.filter((item) => item !== restriction),
+              )
+            }
+          />
+        </div>
+
+        <div>
+          <div className="font-serif italic text-lg text-charcoal mb-3">
+            Default servings
+          </div>
+          <ServingsStepper value={servings} onChange={setServings} />
+        </div>
+      </div>
+    </div>
   );
 }
 

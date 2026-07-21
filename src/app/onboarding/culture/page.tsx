@@ -2,27 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Tile } from "@/components/Tile";
 import { Button } from "@/components/Button";
 import { ProgressDots } from "@/components/ProgressDots";
+import { CultureTilePicker } from "@/components/CultureTilePicker";
 import { useOnboarding } from "@/lib/useOnboarding";
-
-const CUISINES = [
-  "Mexican",
-  "Dominican",
-  "Soul Food",
-  "West African",
-  "Caribbean",
-  "Italian",
-  "Mediterranean",
-  "East Asian",
-  "South Asian",
-  "Southeast Asian",
-  "Middle Eastern",
-  "American comfort",
-] as const;
-
-const NOT_SURE = "Still figuring it out";
 
 export default function CultureOnboarding() {
   const router = useRouter();
@@ -55,20 +38,10 @@ function CultureForm({
   const router = useRouter();
   const [selected, setSelected] = useState(initialSelected);
 
-  const toggle = (option: string) => {
-    const isSelected = selected.includes(option);
-    let next: string[];
-    if (option === NOT_SURE) {
-      next = isSelected ? [] : [NOT_SURE];
-    } else {
-      const withoutNotSure = selected.filter((c) => c !== NOT_SURE);
-      next = isSelected
-        ? withoutNotSure.filter((c) => c !== option)
-        : [...withoutNotSure, option];
-    }
+  function handleChange(next: string[]) {
     setSelected(next);
     onSelectionChange(next);
-  };
+  }
 
   const canContinue = selected.length > 0;
 
@@ -91,23 +64,8 @@ function CultureForm({
           Pick a few. We&apos;ll cook around what you love.
         </p>
 
-        <div className="grid grid-cols-2 gap-2 mb-12">
-          {CUISINES.map((cuisine) => (
-            <Tile
-              key={cuisine}
-              selected={selected.includes(cuisine)}
-              onClick={() => toggle(cuisine)}
-            >
-              {cuisine}
-            </Tile>
-          ))}
-          <Tile
-            selected={selected.includes(NOT_SURE)}
-            onClick={() => toggle(NOT_SURE)}
-            className="col-span-2"
-          >
-            {NOT_SURE}
-          </Tile>
+        <div className="mb-12">
+          <CultureTilePicker selected={selected} onChange={handleChange} />
         </div>
 
         <div className="flex justify-center">

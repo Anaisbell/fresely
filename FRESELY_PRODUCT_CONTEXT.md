@@ -155,6 +155,68 @@ greeting appears when the name is unavailable — there is no generic fallback.
 - "Made for Right Now" wording is still undecided — don't lock it in without
   checking.
 
+## Kitchen and Settings direction
+
+- Kitchen and Settings answer two different questions, and durable data is
+  split along that line rather than by page convenience. Kitchen answers
+  "What do I have to cook with?" — pantry ingredients only. Settings answers
+  "Who am I and what are my long-term preferences?" — first name, cuisine
+  preferences, dietary restrictions, and default servings. Neither page owns
+  the other's concern. The page and bottom-navigation label formerly called
+  "You" are now "Settings" — the old name undersold the page's purpose.
+  `/you` still exists only as a redirect to `/settings`, for anyone with the
+  old URL saved.
+- Time available and meal goal ("Quick and easy," "Comforting," etc.) are
+  deliberately excluded from both. They change day to day, not persistently,
+  so they're treated as recommendation context rather than identity or
+  standing preference. They are not stored as permanent settings and do not
+  belong on either Kitchen or Settings. Today they're still only captured
+  once during onboarding and then implicitly reused from whatever `goal` was
+  attached to the last generated recommendation — there is no durable field
+  for either and no way to change them after onboarding. That gap is known
+  and intentionally out of scope for the Kitchen V1 milestone; a future
+  "choose at generation time" surface is the eventual fix, not a Kitchen or
+  Settings field.
+- Kitchen V1's ingredients are the page's primary content, not a form to
+  fill out and submit: each ingredient renders as a substantial chip (larger
+  and warmer than the compact utility `Pill` component), and adding is a
+  secondary, low-weight affordance — a quiet "+ Add ingredient" chip living
+  in the same row as the ingredients, not a bordered input field competing
+  for attention at the top of the page. Every add or remove commits
+  immediately through `useAppSettings`; there is no Save button and no
+  batch-edit step. Removing an ingredient never requires touching any other
+  ingredient.
+- A duplicate ingredient (case-insensitive) is treated as already satisfied,
+  not an error — the add silently no-ops since the user's goal (that
+  ingredient being in their kitchen) is already true. At the 40-ingredient
+  cap, the add chip is replaced by a quiet inline message rather than
+  letting an add attempt silently fail.
+- Settings V1 is organized as a profile, not a stacked admin form: two
+  sections, "About You" (first name, cuisine preferences) and "Food
+  Preferences" (dietary restrictions, default servings), distinguished by
+  type and spacing alone rather than borders, cards, or boxes. Every field
+  commits immediately on its own interaction — no shared Save button, no
+  batch edit — matching Kitchen's model.
+- Dietary restrictions use the same chip interaction Kitchen's ingredients
+  do (add/remove individually, duplicate-as-no-op, a capacity message at
+  20 rather than a failed add), since they're the same underlying shape:
+  a capped string list a person edits piece by piece. Default servings is
+  the same +/- stepper onboarding already uses, bounded 1–12 to match the
+  schema. First name commits on blur or Enter rather than per keystroke,
+  since it's continuous text rather than a discrete action — and an empty
+  name is refused rather than saved, since it would otherwise send the
+  user back through onboarding (an empty `firstName` reads as incomplete
+  setup).
+- Cuisine preferences in Settings reuse onboarding's tile grid exactly —
+  same fixed cuisines, same "Still figuring it out" exclusivity — rather
+  than a free-text field, specifically to avoid a typo or synonym silently
+  never matching a "Made for Your Roots" anchor recipe. It renders lighter
+  there than during onboarding (smaller tiles, tighter spacing) since
+  onboarding is the primary selection moment and Settings is one field
+  among several, not the page's whole purpose. Cultures must always have
+  at least one selection; Settings silently refuses a deselect that would
+  leave zero, rather than erroring.
+
 ## Visual identity
 
 - Fraunces for expressive headings.

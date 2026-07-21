@@ -15,6 +15,7 @@ export type AppSettingsState = {
   cultures: string[];
   restrictions: string[];
   defaultServings: number;
+  setFirstName: (firstName: string) => void;
   setPantryIngredients: (ingredients: string[]) => void;
   setCultures: (cultures: string[]) => void;
   setRestrictions: (restrictions: string[]) => void;
@@ -53,6 +54,19 @@ export function useAppSettings(): AppSettingsState {
     } catch {
       // Durable state remains authoritative if session storage is unavailable.
     }
+  }
+
+  function setFirstName(firstName: string) {
+    persist(
+      (current) => ({
+        ...current,
+        preferences: { ...current.preferences, firstName },
+      }),
+      () => {
+        const onboarding = readOnboardingAnswers();
+        writeOnboardingAnswers({ ...onboarding, firstName });
+      },
+    );
   }
 
   function setPantryIngredients(ingredients: string[]) {
@@ -118,6 +132,7 @@ export function useAppSettings(): AppSettingsState {
     cultures: state?.preferences.cultures ?? [],
     restrictions: state?.preferences.restrictions ?? [],
     defaultServings: state?.preferences.defaultServings ?? 2,
+    setFirstName,
     setPantryIngredients,
     setCultures,
     setRestrictions,

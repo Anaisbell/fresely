@@ -318,7 +318,7 @@ new recommendation; on failure it clears with `savedAt` unchanged, so the
 loading card gives way back to the same recommendation that was already
 there.
 
-## Kitchen and You settings
+## Kitchen and Settings
 
 `useAppSettings` from `@/lib/app-state/useAppSettings` owns durable pantry and
 preference edits:
@@ -331,6 +331,7 @@ type AppSettingsState = {
   cultures: string[];
   restrictions: string[];
   defaultServings: number;
+  setFirstName: (firstName: string) => void;
   setPantryIngredients: (ingredients: string[]) => void;
   setCultures: (cultures: string[]) => void;
   setRestrictions: (restrictions: string[]) => void;
@@ -343,6 +344,128 @@ These setters modify only pantry or preferences. They never change
 beta onboarding session is synchronized when present so a later request in that
 session uses the updated settings; durable app state remains the source of truth
 across browser sessions.
+
+`AppSettingsState` is the single ownership boundary: Kitchen (`/kitchen`)
+reads and writes only `pantryIngredients`; Settings (`/settings`, formerly
+`/you` — `/you` now renders a client-side redirect to `/settings` for anyone
+with the old URL bookmarked) reads and writes `firstName`, `cultures`,
+`restrictions`, and `defaultServings`. Neither page touches the other's
+fields. `goal`'s directive entries (time available, and the `goal[0]` meal
+priority — see Onboarding above) are intentionally not part of
+`AppSettingsState` and have no editable home post-onboarding; see
+`FRESELY_PRODUCT_CONTEXT.md`'s "Kitchen and Settings direction" for why.
+
+### Shared chip and tile primitives
+
+Kitchen's and Settings' chip-based fields both build on `ChipList`
+(`src/components/ChipList.tsx`), extracted from Kitchen's original
+`PantryIngredients` once Settings needed identical behavior for dietary
+restrictions:
+
+```ts
+type ChipListProps = {
+  items: string[];
+  onAdd: (item: string) => void;
+  onRemove: (item: string) => void;
+  maxItems: number;
+  maxItemLength: number;
+  addLabel: string;
+  addAriaLabel: string;
+  inputAriaLabel: string;
+  inputPlaceholder: string;
+  emptyMessage: string;
+  fullMessage: string;
+};
+```
+
+`ChipList` owns all the actual behavior; domain call sites are thin wrappers
+that only pin down copy and the owning schema's bounds:
+
+- `PantryIngredients` (`src/components/kitchen/PantryIngredients.tsx`) —
+  `maxItems: 40`, `maxItemLength: 120`, mirroring `AppPantrySchema`.
+- `RestrictionChips` (`src/components/settings/RestrictionChips.tsx`) —
+  `maxItems: 20`, `maxItemLength: 120`, mirroring
+  `AppPreferencesSchema.restrictions`.
+
+Both inherit, unchanged: a case-insensitive duplicate silently no-ops rather
+than erroring (the desired end state — that item existing — is already
+true); at `maxItems` the add control is replaced by an inline
+`fullMessage` rather than accepting input that would fail; each item is
+capped at `maxItemLength` via the add input's native `maxLength`. Keyboard
+handling: removing a chip removes its own remove-button from the DOM, so
+`ChipList` restores focus afterward to whichever control now occupies that
+position — the chip that shifted into the removed slot, the previous chip
+if the last one was removed, or the add control if the list is now empty.
+The add control's own Escape/empty-Enter cancel restores focus to the
+resting "+ Add …" chip (same return-to-trigger pattern as `KitchenWisdom`);
+a blur with nothing typed does not force focus back, since the user is
+already deliberately navigating elsewhere and reclaiming focus would fight
+that.
+
+Cuisine preferences share `CultureTilePicker`
+(`src/components/CultureTilePicker.tsx`), extracted from onboarding's
+Culture step for the same reason:
+
+```ts
+type CultureTilePickerProps = {
+  selected: string[];
+  onChange: (next: string[]) => void;
+  compact?: boolean;
+};
+```
+
+Fully controlled, like `ChipList` — no internal selection state, no
+submit/continue affordance, no opinion about minimum selections (see below
+for where that lives). Selecting "Still figuring it out" clears every other
+selection and vice versa. `compact` (default `false`) forwards `size:
+"compact"` to each `Tile` and tightens the grid gap — smaller padding and
+type, identical toggle behavior — so onboarding's Culture step (the primary
+selection experience) stays full-weight while Settings, where the picker is
+one field among several, reads lighter. `Tile` itself
+(`src/components/Tile.tsx`) gained this `size` prop additively; every
+existing call site that doesn't pass it renders exactly as before. The
+group has a built-in `aria-label="Cuisine preferences"` regardless of
+caller context.
+
+### Kitchen V1 interaction model
+
+`/kitchen` renders `PantryIngredients` as described above — a controlled
+component owning no storage itself, wired by `KitchenPage` straight to
+`settings.setPantryIngredients`, so every add or remove persists
+immediately with no batch Save step.
+
+### Settings V1 interaction model
+
+`/settings` renders four fields against `useAppSettings`, grouped into two
+sections ("About You": first name, cuisine preferences; "Food Preferences":
+dietary restrictions, default servings) rather than one continuous list —
+every field commits immediately, matching Kitchen; there is no Save button.
+
+- **First name** — `FirstNameField` (`src/components/settings/
+  FirstNameField.tsx`) commits on blur or Enter, not per keystroke, since a
+  name is continuous free text rather than a discrete add/remove action.
+  Capped at 60 characters via native `maxLength`, mirroring
+  `AppPreferencesSchema.firstName`. An empty commit is refused and the
+  field reverts to the last saved value instead: `firstName` is
+  schema-valid when empty, but `AppStateGuard` treats an empty `firstName`
+  as incomplete setup and redirects into onboarding, so silently persisting
+  an empty name would unexpectedly send the user through onboarding again.
+- **Cuisine preferences** — `CultureTilePicker` in `compact` mode. Cultures
+  require at least one selection (`AppPreferencesSchema.cultures.min(1)`),
+  but `CultureTilePicker` itself has no opinion about minimums (onboarding
+  uses the same component without this constraint mattering, since
+  onboarding's Continue button is simply disabled at zero). The Settings
+  page's `onChange` handler enforces it instead: a deselect that would
+  leave zero selected is silently refused rather than committing an empty
+  array, which would otherwise throw on `FreselyAppStateSchema.parse`.
+- **Dietary restrictions** — `RestrictionChips`, as described above.
+- **Default servings** — `ServingsStepper` (`src/components/settings/
+  ServingsStepper.tsx`), the same +/- visual pattern as onboarding Details'
+  stepper, bounded 1–12 to match `AppPreferencesSchema.defaultServings`
+  (onboarding Details' own stepper is narrower, 1–6 — a separate, known,
+  out-of-scope inconsistency; see `FRESELY_PRODUCT_CONTEXT.md`). The
+  displayed count is `aria-live="polite"` so a screen reader announces the
+  new value after each adjustment.
 
 ## App-state recovery
 
