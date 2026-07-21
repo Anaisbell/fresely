@@ -97,6 +97,47 @@ in `data/index.ts`. Adding a cultural classic means appending an entry to
 its culture's file, or adding a new culture file and registering it in
 `data/index.ts` — no other file changes as the library grows.
 
+### Home's "Made for Your Roots" spotlight section
+
+A second, independent consumer of the same anchor-recipes module:
+`selectSpotlightAnchorRecipe` (also in `anchor-recipes/select.ts`) reuses the
+same culture + `mealContext` index and the same restriction check as
+`selectAnchorRecipe`, but never applies the pantry or time filters. This
+section's purpose is inspiration and cultural connection, not "what can I
+cook right now" — that's still the hero's job. Restrictions and meal context
+stay hard requirements (safety, and "is this even the right meal period");
+pantry and stated available time are not filters here at all.
+
+Home calls this directly from the client (`RootsSpotlight` component,
+rendered in `home/page.tsx`) — the anchor-recipes module has no server-only
+dependencies (no API keys, unlike `claude.ts`), so this runs with no network
+round trip. Worth revisiting once the library is large: today the whole
+library ships in the client bundle, which is fine at its current size but
+won't stay free at "hundreds or thousands of recipes."
+
+The section is independent of the hero/recommendation lifecycle: it's driven
+by the user's profile (culture, restrictions) and the live meal period, not
+by `currentRecommendation`, so it can render even in the Ready state before
+any recommendation exists. It's hidden only when the hero is already
+displaying that exact curated recipe (matched by `source === "anchor"` and
+title, not by source alone) — a different curated recipe surfacing here
+alongside an anchor-sourced hero is allowed, since that only becomes
+possible once the library has more than one candidate for the same culture
+and meal period.
+
+The spotlight card has no visible call-to-action; the whole card is a real
+`<button>` with an optional `onSelect` prop, reserved for a future recipe
+detail view. `onSelect` is intentionally left unwired by Home for this
+milestone.
+
+`AnchorRecipeSchema` also carries an optional, nullable `imageUrl`, same
+"reserved, none invented" precedent as the hero's own image placeholder — no
+curated recipe has a real photo yet, so it stays `null` until one exists.
+The spotlight card is a teaser, not a full read: title and rationale are
+both visually line-clamped (full text remains in the DOM for screen
+readers), and time/servings metadata is intentionally omitted — that detail
+belongs to the hero's cook-now context, not to a card meant to invite a tap.
+
 Failures use:
 
 ```ts

@@ -36,5 +36,7 @@ export const dominicanAnchorRecipes: AnchorRecipe[] = [
     ],
     caution: null,
     allergenTags: [],
+    // No real photo exists yet — see the imageUrl comment on AnchorRecipeSchema.
+    imageUrl: null,
   },
 ];

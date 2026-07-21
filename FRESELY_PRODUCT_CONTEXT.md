@@ -104,8 +104,24 @@ greeting appears when the name is unavailable — there is no generic fallback.
   library — curators add classics incrementally, one file per culture under
   `src/lib/dinner/anchor-recipes/data/`; nothing else in the system changes
   as the library grows. Every recommendation now carries a `source: "anchor"
-  | "ai"` field; no Home UI treatment for it exists yet (see
-  `FUNCTIONAL_CONTRACTS.md`).
+  | "ai"` field, but that field has no hero UI treatment — the hero stays
+  focused on "what should I cook right now" and never explains where a pick
+  came from.
+- The first "Made for Your Roots" UI is its own Home section beneath the
+  hero, not a marker on it — deliberately separate so the feature has its
+  own identity rather than reading as metadata on the hero card. It surfaces
+  a curated classic matching the user's culture and the live meal period;
+  unlike the hero, pantry and available time are not requirements here — the
+  point is inspiration and cultural connection, not a cooking decision, so a
+  recipe can appear even if tonight's kitchen or schedule doesn't quite fit
+  it. Static presentation only in this milestone: a heading ("Made for Your
+  Roots"), a warm one-line supporting note ("A taste of {culture} home
+  cooking."), and a card built to invite a tap rather than to be read in
+  full — a modest reserved image (a warm placeholder until a real photo
+  exists), a teaser (title and cultural note both clipped, not the full
+  text), and no visible call-to-action; the whole card is tappable,
+  reserved for a future recipe detail view that doesn't exist yet. See
+  `FUNCTIONAL_CONTRACTS.md` for the selection logic.
 - Time-aware recommendations: breakfast, lunch, dinner.
 - Primary recommendations use the browser-local meal period captured when
   generation begins: breakfast 05:00–10:59, lunch 11:00–15:59, and dinner

@@ -9,9 +9,11 @@ import { HeroTransition } from "@/components/recommendation/HeroTransition";
 import { NotTodaySheet } from "@/components/recommendation/NotTodaySheet";
 import { RecommendationIngredients } from "@/components/recommendation/RecommendationIngredients";
 import { RecommendationSteps } from "@/components/recommendation/RecommendationSteps";
+import { RootsSpotlight } from "@/components/recommendation/RootsSpotlight";
 import { persistGeneratedRecommendation } from "@/lib/app-state/setup";
 import { readGenerationOnboardingAnswers } from "@/lib/app-state/storage";
 import { useHomeRecommendation } from "@/lib/app-state/useHomeRecommendation";
+import { selectSpotlightAnchorRecipe } from "@/lib/dinner/anchor-recipes/select";
 import { requestDinnerRecommendation } from "@/lib/dinner/client";
 import { getMealContext } from "@/lib/dinner/meal-context";
 import type { MealContext } from "@/lib/dinner/types";
@@ -119,6 +121,34 @@ export default function HomePage() {
   // recommendation. Never recalculated from the current clock.
   const mealLabel = mealContext ? MEAL_LABELS[mealContext] : "Tonight";
 
+  // "Made for Your Roots" spotlight: independent of the hero/recommendation
+  // lifecycle entirely — driven by the user's profile and the live meal
+  // period, not by whatever currentRecommendation happens to be. That's why
+  // it works even in the Ready state, where there may be no recommendation
+  // at all. Hidden only when the hero is already showing this exact curated
+  // recipe (matched by title, not just by source — a different curated
+  // recipe surfacing here alongside an anchor-sourced hero is fine once the
+  // library has more than one candidate per culture + meal period).
+  const spotlightAnswers = readGenerationOnboardingAnswers();
+  const spotlightRecipe = selectSpotlightAnchorRecipe({
+    culture: spotlightAnswers.culture,
+    goal: spotlightAnswers.goal,
+    kitchen: spotlightAnswers.kitchen,
+    restrictions: spotlightAnswers.restrictions,
+    mealContext: getMealContext(),
+  });
+  const heroIsSpotlightRecipe = Boolean(
+    currentRecommendation &&
+      isFresh &&
+      currentRecommendation.source === "anchor" &&
+      spotlightRecipe &&
+      currentRecommendation.title === spotlightRecipe.title,
+  );
+  const spotlightSection =
+    spotlightRecipe && !heroIsSpotlightRecipe ? (
+      <RootsSpotlight recipe={spotlightRecipe} />
+    ) : null;
+
   // --- Loading (transient, presentation-only while navigating away) ---
   if (isLeaving) {
     return (
@@ -147,7 +177,7 @@ export default function HomePage() {
   // --- Ready (no fresh recommendation) ---
   if (!currentRecommendation || !isFresh) {
     return (
-      <main className="relative flex flex-1 items-center justify-center px-6">
+      <main className="relative flex flex-col flex-1 items-center justify-center gap-12 px-6">
         <KitchenWisdom />
         <div className="text-center max-w-md">
           {greeting}
@@ -161,6 +191,9 @@ export default function HomePage() {
             Show me what to make &rarr;
           </Button>
         </div>
+        {spotlightSection ? (
+          <div className="w-full max-w-2xl">{spotlightSection}</div>
+        ) : null}
       </main>
     );
   }
@@ -198,6 +231,7 @@ export default function HomePage() {
             Enjoy tonight.
           </p>
           {detailsBlock}
+          {spotlightSection}
         </article>
       </main>
     );
@@ -223,6 +257,7 @@ export default function HomePage() {
           />
         </HeroTransition>
         {detailsBlock}
+        {spotlightSection}
       </article>
       <NotTodaySheet
         open={notTodayOpen}

@@ -129,6 +129,30 @@ export function selectAnchorRecipe(
 }
 
 /**
+ * Returns the curated recipe to feature in Home's "Made for Your Roots"
+ * spotlight section, or null if none fits — in which case the section
+ * doesn't render at all.
+ *
+ * Deliberately a separate function from selectAnchorRecipe, not a shared
+ * one with an options flag: this section's purpose is inspiration and
+ * cultural connection, not "what can I cook right now," so pantry and
+ * available time are never filters here, only restrictions and meal
+ * context (both still hard — safety and "is this even the right meal
+ * period" apply regardless of what the section is for). The hero
+ * recommendation remains the practical, cook-this-now pick; this is not
+ * that, even though it can surface the same recipe.
+ */
+export function selectSpotlightAnchorRecipe(
+  request: GenerateDinnerRequest,
+): AnchorRecipe | null {
+  const candidates = candidatesFor(request).filter(
+    (recipe) => !conflictsWithRestrictions(recipe, request.restrictions),
+  );
+
+  return candidates[0] ?? null;
+}
+
+/**
  * Maps a selected anchor recipe to the same DinnerRecommendation shape the
  * AI path produces, so no rendering or persistence code needs to know
  * anchor recipes exist. `availableIngredients` includes every core

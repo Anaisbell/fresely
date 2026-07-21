@@ -23,6 +23,11 @@ import { MealContextSchema } from "../schema";
  * `allergenTags` is how a curator declares known conflicts (e.g. "dairy",
  * "shellfish", "gluten", "pork", "nuts") without free-text guesswork at
  * selection time — see conflictsWithRestrictions in select.ts.
+ *
+ * `imageUrl` is optional and nullable, same "reserved, none invented"
+ * precedent as the hero card's placeholder: no curated recipe has a real
+ * photo yet, so this stays null until one exists. RootsSpotlight falls back
+ * to a modest gradient placeholder when it's absent — see that component.
  */
 export const AnchorRecipeSchema = z.object({
   id: z.string().trim().min(1).max(80),
@@ -37,6 +42,7 @@ export const AnchorRecipeSchema = z.object({
   steps: z.array(z.string().trim().min(1).max(600)).min(2).max(12),
   caution: z.string().trim().max(500).nullable(),
   allergenTags: z.array(z.string().trim().min(1).max(40)).max(20),
+  imageUrl: z.string().trim().url().nullable().default(null),
 });
 
 export type AnchorRecipe = z.infer<typeof AnchorRecipeSchema>;
