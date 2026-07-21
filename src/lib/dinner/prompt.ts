@@ -32,5 +32,5 @@ Current meal goal: ${input.goal.join(", ")}
 Ingredients available: ${input.kitchen.join(", ")}
 Restrictions or dislikes: ${restrictions}
 
-The actual dish must naturally suit the supplied meal period. Do not take a dinner dish and merely relabel it as breakfast or lunch. Honor any explicit time and serving directives in the meal goal. If they are absent, default to 2 servings and infer a realistic preparation time. The rationale should explicitly connect the recommendation to the user's goal, cuisine preferences, available ingredients, and meal period.${diversityNote}`;
+The actual dish must naturally suit the supplied meal period. Do not take a dinner dish and merely relabel it as breakfast or lunch. Honor any explicit time and serving directives in the meal goal. If they are absent, default to 2 servings and infer a realistic preparation time. The rationale should explicitly connect the recommendation to the user's goal, cuisine preferences, available ingredients, and meal period. Keep the rationale to 500 characters or fewer.${diversityNote}`;
 }

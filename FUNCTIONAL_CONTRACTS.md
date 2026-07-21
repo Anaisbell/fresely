@@ -126,9 +126,24 @@ possible once the library has more than one candidate for the same culture
 and meal period.
 
 The spotlight card has no visible call-to-action; the whole card is a real
-`<button>` with an optional `onSelect` prop, reserved for a future recipe
-detail view. `onSelect` is intentionally left unwired by Home for this
-milestone.
+`<button>`. `onSelect` now opens `RootsSpotlightSheet`, a read-only recipe
+preview (full title, culture, full rationale, time/servings, ingredients,
+and steps via the existing `RecommendationSteps`) — not a cooking decision,
+so it has no Cook Now, Made it, or Not tonight actions, and doesn't reuse
+`RecommendationIngredients`: that component's "In your kitchen" framing
+would misrepresent the recipe here, since `selectSpotlightAnchorRecipe`
+never checks the pantry. `RootsSpotlightSheet` composes the same generic
+`BottomSheet` `NotTodaySheet` uses.
+
+`RootsSpotlightSheet`'s content is deliberately split into named sub-
+components (a summary piece, an ingredients piece, plus the reused
+`RecommendationSteps`) rather than one inline block, and ingredients render
+as a real list — one element per item, not a joined string — so the sheet
+can grow into the full recipe experience (actions like Cook this,
+ingredient ownership, timers, saving) later without a rewrite. None of
+that is built yet, and there's deliberately no speculative prop surface
+for it (no `onCookThis` or similar) — just a marked, empty spot in the
+sheet where such actions would go.
 
 `AnchorRecipeSchema` also carries an optional, nullable `imageUrl`, same
 "reserved, none invented" precedent as the hero's own image placeholder — no
@@ -284,10 +299,24 @@ Regeneration itself reuses the existing pipeline exactly:
 rather than via `/onboarding/loading`. No schema, prompt, or persistence
 function changed — only the call site. The result is handed to
 `useHomeRecommendation`'s `syncState` so Home updates without navigating or
-reloading. `HeroTransition` (keyed on `savedAt`) animates the swap; there is
-no intermediate loading screen for this path. If regeneration fails, the
-current recommendation stays exactly as it was and the failure is logged —
-there is no visible error state for this path in V1.
+reloading. If regeneration fails, the current recommendation stays exactly
+as it was and the failure is logged — there is no visible error state for
+this path in V1.
+
+Tapping Continue sets local `isRegenerating` state synchronously (in the
+same handler that closes the sheet and collapses any expanded recipe
+details), before the async request even starts. While true, `HeroTransition`
+renders `RegeneratingHeroCard` — a hero-shaped loading state, not a spinner
+— in place of `FeaturedRecommendationCard`; since the interactive card
+(including its own "Not tonight" button) isn't on screen during this
+window, there's structurally nothing to double-tap. `HeroTransition`'s
+`transitionKey` changes at each phase (real card → loading card → real
+card again) so it animates all three the same way it always has — the
+component itself is unmodified. On success `isRegenerating` clears once
+`syncState` has already updated `savedAt`, so the key change lands on the
+new recommendation; on failure it clears with `savedAt` unchanged, so the
+loading card gives way back to the same recommendation that was already
+there.
 
 ## Kitchen and You settings
 

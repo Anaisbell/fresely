@@ -119,9 +119,20 @@ greeting appears when the name is unavailable — there is no generic fallback.
   cooking."), and a card built to invite a tap rather than to be read in
   full — a modest reserved image (a warm placeholder until a real photo
   exists), a teaser (title and cultural note both clipped, not the full
-  text), and no visible call-to-action; the whole card is tappable,
-  reserved for a future recipe detail view that doesn't exist yet. See
-  `FUNCTIONAL_CONTRACTS.md` for the selection logic.
+  text), and no visible call-to-action; the whole card is tappable. Tapping
+  it opens a read-only recipe preview in a bottom sheet — full title,
+  culture, the full cultural note, time/servings, ingredients, and steps —
+  with no Cook Now, Made it, or Not tonight; it's exploration, not a
+  decision about tonight's meal. See `FUNCTIONAL_CONTRACTS.md` for the
+  selection logic.
+- Regenerating after "Not tonight" now shows an immediate, calm
+  acknowledgment instead of the old recommendation sitting there
+  unchanged while nothing visibly happens: the hero card is replaced by a
+  hero-shaped loading state (a gently pulsing version of its own image
+  placeholder plus one warm line, "Finding a better fit.") the moment
+  Continue is tapped, and smoothly swaps to the new recommendation once
+  it's ready. Not a spinner, and not a separate loading screen or route —
+  it's the same hero-shaped space the recommendation already occupies.
 - Time-aware recommendations: breakfast, lunch, dinner.
 - Primary recommendations use the browser-local meal period captured when
   generation begins: breakfast 05:00–10:59, lunch 11:00–15:59, and dinner

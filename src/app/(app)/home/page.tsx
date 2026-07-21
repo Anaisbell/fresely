@@ -9,7 +9,9 @@ import { HeroTransition } from "@/components/recommendation/HeroTransition";
 import { NotTodaySheet } from "@/components/recommendation/NotTodaySheet";
 import { RecommendationIngredients } from "@/components/recommendation/RecommendationIngredients";
 import { RecommendationSteps } from "@/components/recommendation/RecommendationSteps";
+import { RegeneratingHeroCard } from "@/components/recommendation/RegeneratingHeroCard";
 import { RootsSpotlight } from "@/components/recommendation/RootsSpotlight";
+import { RootsSpotlightSheet } from "@/components/recommendation/RootsSpotlightSheet";
 import { persistGeneratedRecommendation } from "@/lib/app-state/setup";
 import { readGenerationOnboardingAnswers } from "@/lib/app-state/storage";
 import { useHomeRecommendation } from "@/lib/app-state/useHomeRecommendation";
@@ -42,6 +44,8 @@ export default function HomePage() {
   const [expanded, setExpanded] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [notTodayOpen, setNotTodayOpen] = useState(false);
+  const [rootsPreviewOpen, setRootsPreviewOpen] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const regeneratingRef = useRef(false);
 
   function startGeneration() {
@@ -59,13 +63,22 @@ export default function HomePage() {
   // /onboarding/loading: no route change, no loading screen. Reuses the
   // same requestDinnerRecommendation + persistGeneratedRecommendation path
   // the loading screen already uses — nothing about generation itself
-  // changes, only where it's called from. HeroTransition (keyed on
-  // savedAt) picks up the resulting state change and animates the swap.
+  // changes, only where it's called from.
+  //
+  // isRegenerating drives which card HeroTransition shows (see the Pick
+  // branch below): flipping it true swaps in RegeneratingHeroCard, flipping
+  // it false swaps back to the real card — either the new recommendation on
+  // success, or the unchanged current one if generation fails, since
+  // nothing was persisted in that case. regeneratingRef stays as a defense-
+  // in-depth guard against a double-fire; the structural fix is that the
+  // interactive card (and its "Not tonight" button) isn't on screen at all
+  // while isRegenerating is true, so there's nothing to tap twice.
   async function regenerateForNotToday() {
     if (regeneratingRef.current) {
       return;
     }
     regeneratingRef.current = true;
+    setIsRegenerating(true);
 
     try {
       const answers = readGenerationOnboardingAnswers();
@@ -85,18 +98,23 @@ export default function HomePage() {
         nextMealContext,
       );
       syncState(nextState);
-      setExpanded(false);
     } catch (error) {
-      // No loading/error screen for this path by design — the current pick
-      // simply stays put if regeneration fails.
+      // No separate error UI for this path by design — the loading card
+      // simply gives way back to the current pick, unchanged, since
+      // regeneration never persisted anything.
       console.error("Not today regeneration failed", error);
     } finally {
       regeneratingRef.current = false;
+      setIsRegenerating(false);
     }
   }
 
   function handleNotTodayContinue() {
     setNotTodayOpen(false);
+    // Collapse immediately, not just on success — the loading card is about
+    // to replace the real one, so any expanded ingredients/steps for the
+    // recipe being replaced shouldn't linger underneath it.
+    setExpanded(false);
     void regenerateForNotToday();
   }
 
@@ -146,8 +164,21 @@ export default function HomePage() {
   );
   const spotlightSection =
     spotlightRecipe && !heroIsSpotlightRecipe ? (
-      <RootsSpotlight recipe={spotlightRecipe} />
+      <RootsSpotlight
+        recipe={spotlightRecipe}
+        onSelect={() => setRootsPreviewOpen(true)}
+      />
     ) : null;
+  // Computed once and referenced wherever spotlightSection appears, same
+  // pattern. Read-only preview — see RootsSpotlightSheet for why it doesn't
+  // reuse the hero's own expandable recipe details.
+  const rootsPreviewSheet = (
+    <RootsSpotlightSheet
+      recipe={spotlightRecipe}
+      open={rootsPreviewOpen}
+      onClose={() => setRootsPreviewOpen(false)}
+    />
+  );
 
   // --- Loading (transient, presentation-only while navigating away) ---
   if (isLeaving) {
@@ -194,6 +225,7 @@ export default function HomePage() {
         {spotlightSection ? (
           <div className="w-full max-w-2xl">{spotlightSection}</div>
         ) : null}
+        {rootsPreviewSheet}
       </main>
     );
   }
@@ -233,28 +265,42 @@ export default function HomePage() {
           {detailsBlock}
           {spotlightSection}
         </article>
+        {rootsPreviewSheet}
       </main>
     );
   }
 
   // --- Pick (active recommendation, not yet made) ---
+  // While regenerating, the transition key changes to something distinct
+  // from both the current and (eventual) next savedAt, so HeroTransition
+  // always registers a real transition at each phase: real card ->
+  // RegeneratingHeroCard -> real card again (new on success, same one
+  // unchanged on failure, since savedAt only moves on success).
+  const pickTransitionKey = isRegenerating
+    ? `regenerating:${savedAt ?? "initial"}`
+    : (savedAt ?? "initial");
+
   return (
     <main className="relative flex-1 px-6 py-12 md:py-16">
       <KitchenWisdom />
       <article className="max-w-2xl mx-auto space-y-10">
         {greeting}
         {supportingLine}
-        <HeroTransition transitionKey={savedAt ?? "initial"}>
-          <FeaturedRecommendationCard
-            title={currentRecommendation.title}
-            mealLabel={mealLabel}
-            timeMinutes={currentRecommendation.timeMinutes}
-            servings={currentRecommendation.servings}
-            cookNowExpanded={expanded}
-            onCookNow={() => setExpanded((v) => !v)}
-            onMadeIt={() => markMade()}
-            onNotTonight={() => setNotTodayOpen(true)}
-          />
+        <HeroTransition transitionKey={pickTransitionKey}>
+          {isRegenerating ? (
+            <RegeneratingHeroCard />
+          ) : (
+            <FeaturedRecommendationCard
+              title={currentRecommendation.title}
+              mealLabel={mealLabel}
+              timeMinutes={currentRecommendation.timeMinutes}
+              servings={currentRecommendation.servings}
+              cookNowExpanded={expanded}
+              onCookNow={() => setExpanded((v) => !v)}
+              onMadeIt={() => markMade()}
+              onNotTonight={() => setNotTodayOpen(true)}
+            />
+          )}
         </HeroTransition>
         {detailsBlock}
         {spotlightSection}
@@ -264,6 +310,7 @@ export default function HomePage() {
         onClose={() => setNotTodayOpen(false)}
         onContinue={handleNotTodayContinue}
       />
+      {rootsPreviewSheet}
     </main>
   );
 }
